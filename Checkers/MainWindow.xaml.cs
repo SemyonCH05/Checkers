@@ -19,6 +19,19 @@ namespace Checkers
         public MainWindow()
         {
             InitializeComponent();
+            
+
+
+
+
+
+
+
+
+
+
+
+
         }
     }
 }
