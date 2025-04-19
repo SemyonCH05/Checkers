@@ -42,7 +42,7 @@ namespace Checkers
                         Grid.SetColumn(canvas, j);
                         grid.Children.Add(canvas);
 
-
+                        int hope = 12;
                     }
 
                 }
