@@ -20,17 +20,7 @@ namespace Checkers
         {
             InitializeComponent();
             
-            // миша лох
-
-
-            //hiuefrijvefrhiuefrwohefrwbajoherwijg
-
-
-
-
-
-
-
+            
 
         }
     }
