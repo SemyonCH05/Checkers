@@ -5,8 +5,32 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Checkers"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
-    <Grid>
+        Title="MainWindow" Height="480" Width="457">
+    <Grid x:Name="grid" Background="#EBECD0" MouseLeftButtonDown="ClickMouse" SizeChanged="GridSizeChanged">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width = "*"/>
+            <ColumnDefinition Width = "*"/>
+            <ColumnDefinition Width = "*"/>
+            <ColumnDefinition Width = "*"/>
+            <ColumnDefinition Width = "*"/>
+            <ColumnDefinition Width = "*"/>
+            <ColumnDefinition Width = "*"/>
+            <ColumnDefinition Width = "*"/>
+        </Grid.ColumnDefinitions>
+
+
+
 
     </Grid>
 </Window>
