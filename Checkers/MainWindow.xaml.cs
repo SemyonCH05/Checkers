@@ -24,7 +24,11 @@ namespace Checkers
             _boardViewModel = new BoardViewModel();
             DataContext = _boardViewModel;
         }
-
+        private void StartGame_Click(object sender, RoutedEventArgs e)
+        {
+            MenuScreen.Visibility = Visibility.Collapsed;
+            GameScreen.Visibility = Visibility.Visible;
+        }
         private void Size(object sender, SizeChangedEventArgs e)
         {
             var grid = (Grid)sender;
