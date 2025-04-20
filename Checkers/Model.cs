@@ -63,11 +63,5 @@ namespace Checkers
                 }
             }
         }
-
-        public void Move(int row, int col)
-        {
-            //Cells[row, col].ToX = Cells[row, col].ToX;
-            MessageBox.Show($"{row}, {col}");
-        }
     }
 }
