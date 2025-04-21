@@ -5,8 +5,81 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Checkers"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
+        Title="Play" Height="480" Width="480">
+
+    <Window.DataContext>
+        <local:BoardViewModel/>
+    </Window.DataContext>
+
+    <Window.Resources>
+        <local:InnerCheckerSizeConverter x:Key="InnerCheckerSizeConverter"/>
+    </Window.Resources>
+
+    <!-- ОСНОВНОЙ КОНТЕЙНЕР -->
     <Grid>
 
+        <!-- ЭКРАН МЕНЮ -->
+        <Grid x:Name="MenuScreen" Background="#EBECD0">
+            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                <TextBlock Text="Если вы хотите играть в шашки, нажмите кнопку с надписью 'я хочу играть в шашки'"
+                           FontSize="16" TextWrapping="Wrap" TextAlignment="Center" Margin="20"/>
+                <Button Content="я хочу играть в шашки" Click="StartGame_Click"
+                        Background="#779556" Foreground="#EBECD0" Padding="10" FontSize="16"/>
+            </StackPanel>
+        </Grid>
+
+        <!-- ЭКРАН ИГРЫ -->
+        <Grid x:Name="GameScreen" Visibility="Collapsed" Background="#EBECD0">
+
+            <!-- ПОЛЕ С ИГРОЙ -->
+            <ItemsControl ItemsSource="{Binding Cells}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <Grid SizeChanged="Size">
+                            <Grid.RowDefinitions>
+                                <RowDefinition/>
+                                <RowDefinition/>
+                                <RowDefinition/>
+                                <RowDefinition/>
+                                <RowDefinition/>
+                                <RowDefinition/>
+                                <RowDefinition/>
+                                <RowDefinition/>
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition/>
+                                <ColumnDefinition/>
+                                <ColumnDefinition/>
+                                <ColumnDefinition/>
+                                <ColumnDefinition/>
+                                <ColumnDefinition/>
+                                <ColumnDefinition/>
+                                <ColumnDefinition/>
+                            </Grid.ColumnDefinitions>
+                        </Grid>
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+
+                <ItemsControl.ItemContainerStyle>
+                    <Style TargetType="ContentPresenter">
+                        <Setter Property="Grid.Row" Value="{Binding Row}" />
+                        <Setter Property="Grid.Column" Value="{Binding Col}" />
+                    </Style>
+                </ItemsControl.ItemContainerStyle>
+
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Button Command="{Binding CellClick}" CommandParameter="{Binding}" 
+                                Grid.Row="{Binding Row}" Grid.Column="{Binding Col}" 
+                                Background="{Binding Background}">
+                            <Ellipse Width="{Binding CellSize, Converter={StaticResource InnerCheckerSizeConverter}}" 
+                                     Height="{Binding CellSize, Converter={StaticResource InnerCheckerSizeConverter}}" 
+                                     Fill="{Binding Checker.Fill}"/>
+                        </Button>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+        </Grid>
     </Grid>
 </Window>
