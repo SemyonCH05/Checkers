@@ -17,13 +17,36 @@ namespace Checkers
     /// </summary>
     public partial class MainWindow : Window
     {
-        private Dictionary<(int row, int col), Canvas> canvasDict = new Dictionary<(int row, int col), Canvas>();
-        private double cellSize = 58;
+
+
+        BoardViewModel _boardViewModel;
         public MainWindow()
         {
             InitializeComponent();
-            
-            
+            _boardViewModel = new BoardViewModel();
+            DataContext = _boardViewModel;
+        }
+        private void StartGame_Click(object sender, RoutedEventArgs e)
+        {
+            MenuScreen.Visibility = Visibility.Collapsed;
+            GameScreen.Visibility = Visibility.Visible;
+        }
+
+
+        private void Size(object sender, SizeChangedEventArgs e)
+        {
+            var grid = (Grid)sender;
+            double cellSize = Math.Min(grid.ActualWidth / 8, grid.ActualHeight / 8);
+            _boardViewModel.UpdateCellSize(cellSize);
+        }
+    }
+
+
+    // чтобы круг был чуть меньше ячейки
+    public class InnerCheckerSizeConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+            => (value is double d) ? d * 0.8 : 0;
 
         }
     }
