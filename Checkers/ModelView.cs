@@ -281,6 +281,7 @@ namespace Checkers
 
             // Генерация клеток доски
             Cells = new ObservableCollection<CellViewModel>();
+            _selectedCell = null;
             for (int i = 0; i < 8; i++)
             {
                 for (int j = 0; j < 8; j++)
@@ -296,7 +297,7 @@ namespace Checkers
                         if (checker != null)
                         {
                             cell.Checker = new CheckerViewModel(checker);
-                            _selectedCell = null;
+                            
                         }
                         Cells.Add(cell);
                     }
@@ -304,22 +305,21 @@ namespace Checkers
             }
         }   
          // Обновление размера клеток при изменении окна
-         public void UpdateCellSize(double newSize)
+        public void UpdateCellSize(double newSize)
         {
             foreach (var cell in Cells)
             {
                 cell.CellSize = newSize;
             }
 
-         }
+        }
  
          // Обработка нажатия на клетку
-         private void OnCellClick(CellViewModel cell)
+        private void OnCellClick(CellViewModel cell)
         {
             // какой-то обработчик нажатия на ячейку пока просто показывает координаты клетки
             // Пока просто показываем координаты
             MessageBox.Show(cell.Row.ToString() + " " + cell.Col.ToString());
-
         }
 
         // Реализация интерфейса INotifyPropertyChanged
