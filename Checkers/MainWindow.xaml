@@ -17,7 +17,7 @@
 
     <!-- ОСНОВНОЙ КОНТЕЙНЕР -->
     <Grid>
-
+    
         <!-- ЭКРАН МЕНЮ -->
         <Grid x:Name="MenuScreen" Background="#EBECD0">
             <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
@@ -29,8 +29,8 @@
         </Grid>
 
         <!-- ЭКРАН ИГРЫ -->
-        <Grid x:Name="GameScreen" Visibility="Collapsed" Background="#EBECD0">
-
+        <Grid x:Name="GameScreen" Visibility="Collapsed"  Background="#EBECD0">
+            
             <!-- ПОЛЕ С ИГРОЙ -->
             <ItemsControl ItemsSource="{Binding Cells}">
                 <ItemsControl.ItemsPanel>
@@ -69,7 +69,7 @@
 
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
-                        <Button Command="{Binding CellClick}" CommandParameter="{Binding}" 
+                        <Button Command="{Binding CellClick}" CommandParameter="{Binding NotifyOnTargetUpdated=True}" 
                                 Grid.Row="{Binding Row}" Grid.Column="{Binding Col}" 
                                 Background="{Binding Background}">
                             <Ellipse Width="{Binding CellSize, Converter={StaticResource InnerCheckerSizeConverter}}" 

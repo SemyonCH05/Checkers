@@ -16,7 +16,7 @@ namespace Checkers
 {
     class CheckerViewModel : INotifyPropertyChanged
     {
-        public Checker _checker;
+        public Checker _checkerModel;
         public int Row { get; private set; }
         public int Column { get; private set; }
         private bool _isKing;
@@ -30,15 +30,26 @@ namespace Checkers
             }
         }
 
-        private bool Color => _checker.IsWhite; //цвет шашки 0 - черный 1 - белый
+        private bool Color => _checkerModel.IsWhite; //цвет шашки 0 - черный 1 - белый
 
-        public Brush Fill => Color ? Brushes.White : Brushes.Black;
+        private Brush _fill;
+
+        public Brush Fill
+        {
+            get => _fill;
+            set
+            {
+                _fill = value;
+                OnPropertyChanged("Fill");
+            }
+        }
 
         public CheckerViewModel(Checker checker)
         {
-            _checker = checker;
+            _checkerModel = checker;
             Row = checker.FromX;
             Column = checker.FromY;
+            _fill = Color ? Brushes.White : Brushes.Black;
         }
 
        
@@ -54,7 +65,20 @@ namespace Checkers
     {
         public int Row { get; }
         public int Col { get; }
-        public Brush Background => new SolidColorBrush(Color.FromRgb(119, 149, 86));
+        private Brush _background = new SolidColorBrush(Color.FromRgb(119, 149, 86));
+
+        public Brush Background
+        {
+            get => _background;
+            set
+            {
+                if (_background != value)
+                {
+                    _background = value;
+                    OnPropertyChanged("Background");
+                }
+            }
+        }
         private CheckerViewModel? _checker;
 
 
@@ -125,7 +149,7 @@ namespace Checkers
 
     class BoardViewModel : INotifyPropertyChanged
     {
-        private Board _board;
+        public Board _board;
         private double _cellSize;
 
         public double CellSize
@@ -160,7 +184,7 @@ namespace Checkers
         public BoardViewModel()
         {
 
-            CellClickCommand = new RelayCommand(param => OnCellClick((CellViewModel)param));
+            CellClickCommand = new RelayCommand(param => Move((CellViewModel)param));
 
             _board = new Board();
             CellSize = 60;
@@ -203,6 +227,30 @@ namespace Checkers
         {
             // какой-то обработчик нажатия на ячейку пока просто показывает координаты клетки
             MessageBox.Show(cell.Row.ToString() + " " + cell.Col.ToString());
+            Move(cell);
+
+        }
+
+        private void Move(CellViewModel cell)
+        {
+            List<(int, int)> AbleMoves = _board.MoveShow(cell.Row, cell.Col);
+            foreach (var (i, j) in AbleMoves) {
+                Cells[i*4+(j-1)/2].Background = new SolidColorBrush(Color.FromRgb(0, 0, 0));
+            }
+            if (cell.Checker != null && SelectedCell == null || cell.Checker == null && SelectedCell != null)
+            {
+                if (SelectedCell == null) { 
+                    SelectedCell = cell;
+                    return;
+                }
+                _board.Cells[cell.Col, cell.Row] = _board.Cells[SelectedCell.Col, SelectedCell.Row];
+                _board.Cells[SelectedCell.Col, SelectedCell.Row] = null;
+                cell.Checker = SelectedCell.Checker;
+                cell.Checker.Fill = SelectedCell.Checker.Fill;
+                SelectedCell.Checker = null;
+                SelectedCell = null;
+
+            }
 
         }
 

@@ -62,5 +62,27 @@ namespace Checkers
                 }
             }
         }
+        public List<(int, int)> MoveShow(int row, int col)
+        {
+            List<(int, int)> list = new List<(int, int)>();
+            MoveShowRecur(row, col, list);
+            return list;
+
+        }
+        private void MoveShowRecur(int row, int col, List<(int, int)> AbleMoves)
+        {
+            if (Cells[row + 1, col - 1] == null) AbleMoves.Add((row + 1, col - 1));
+            else if (Cells[row + 2, col - 2] == null)
+            {
+                AbleMoves.Add((row + 2, col - 2));
+                MoveShowRecur(row + 2, col - 2, AbleMoves);
+            }
+            if (Cells[row + 1, col + 1] == null) AbleMoves.Add((row + 1, col + 1));
+            else if (Cells[row + 2, col + 2] == null)
+            {
+                AbleMoves.Add((row + 2, col + 2));
+                MoveShowRecur(row + 2, col + 2, AbleMoves);
+            }
+        }
     }
 }
