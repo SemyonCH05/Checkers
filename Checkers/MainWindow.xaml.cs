@@ -17,63 +17,29 @@ namespace Checkers
     /// </summary>
     public partial class MainWindow : Window
     {
-        private Dictionary<(int row, int col), Canvas> canvasDict = new Dictionary<(int row, int col), Canvas>();
-        private double cellSize = 58;
+
+
+        BoardViewModel _boardViewModel;
         public MainWindow()
         {
             InitializeComponent();
-
-            for (int i = 0; i < 8; i++)
-            {
-                for (int j = 0; j < 8; j++)
-                {
-                    if ((i + j) % 2 != 0)
-                    {
-                        var canvas = new Canvas
-                        {
-                            Background = new SolidColorBrush(Color.FromRgb(119, 149, 86)),
-                            Name = $"CheckerCell_{i}_{j}",
-                            HorizontalAlignment = HorizontalAlignment.Stretch,
-                            VerticalAlignment = VerticalAlignment.Stretch,
-                            Width = cellSize,
-                            Height = cellSize
-                        };
-                        canvasDict[(i, j)] = canvas;
-                        Grid.SetRow(canvas, i);
-                        Grid.SetColumn(canvas, j);
-                        grid.Children.Add(canvas);
-
-                        int hope = 12;
-                    }
-
-                }
-
-            }
+            _boardViewModel = new BoardViewModel();
+            DataContext = _boardViewModel;
         }
-
-        private void ClickMouse(object sender, MouseButtonEventArgs e) // определение положения клетки
+        private void StartGame_Click(object sender, RoutedEventArgs e)
         {
-            var pos = e.GetPosition((Grid)sender);
-            int row = 0;
-            int col = 0;
-            double accumulatedRow = 0;
-            double accumulatedCol = 0;
-            foreach (var rowDefinition in grid.RowDefinitions)
-            {
-                accumulatedRow += rowDefinition.ActualHeight;
-                if (accumulatedRow >= pos.Y)
-                    break;
-                row++;
-            }
-            foreach (var colDefinition in grid.ColumnDefinitions)
-            {
-                accumulatedCol += colDefinition.ActualWidth;
-                if (accumulatedCol >= pos.X)
-                    break;
-                col++;
-            }
-
+            MenuScreen.Visibility = Visibility.Collapsed;
+            GameScreen.Visibility = Visibility.Visible;
         }
+
+
+        private void Size(object sender, SizeChangedEventArgs e)
+        {
+            var grid = (Grid)sender;
+            double cellSize = Math.Min(grid.ActualWidth / 8, grid.ActualHeight / 8);
+            _boardViewModel.UpdateCellSize(cellSize);
+        }
+    }
 
         private void GridSizeChanged(object sender, SizeChangedEventArgs e) // изменение размера всего при изменении размера окна
         {
