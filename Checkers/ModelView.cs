@@ -199,11 +199,17 @@ namespace Checkers
             }
         }
 
+        //private void OnCellClick(CellViewModel cell)
+        //{
+        //    // какой-то обработчик нажатия на ячейку пока просто показывает координаты клетки
+        //    MessageBox.Show(cell.Row.ToString() + " " + cell.Col.ToString());
+
+        //}
+
         private void OnCellClick(CellViewModel cell)
         {
-            // какой-то обработчик нажатия на ячейку пока просто показывает координаты клетки
-            MessageBox.Show(cell.Row.ToString() + " " + cell.Col.ToString());
-
+            _selectedCell = cell;
+            _board.Move(3, 5);
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;
