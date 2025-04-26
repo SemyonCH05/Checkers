@@ -39,7 +39,7 @@ namespace Checkers
 
         public MainViewModel()
         {
-            IsGameScreenVisible = false; //заменить на false
+            IsGameScreenVisible = false;
             StartGameCommand = new RelayCommand(_ => IsGameScreenVisible = true);
             BackToMenuCommand = new RelayCommand(_ => IsGameScreenVisible = false); // новая команда
         }
@@ -196,8 +196,8 @@ namespace Checkers
         }
 
         //public BoardViewModel()
-         // Логика отображения экранов
-         private bool _isGameScreenVisible;
+        // Логика отображения экранов
+        private bool _isGameScreenVisible;
         private bool _isNetworkGameScreenVisible;
 
         // Флаг: обычная игра
