@@ -52,7 +52,7 @@ namespace Checkers
     }
     class CheckerViewModel : INotifyPropertyChanged
     {
-        public Checker _checker;
+        public Checker _checkerModel;
         public int Row { get; private set; }
         public int Column { get; private set; }
         private bool _isKing;
@@ -66,15 +66,27 @@ namespace Checkers
             }
         }
 
-        private bool Color => _checker.IsWhite; //цвет шашки 0 - черный 1 - белый
+        private bool Color; //цвет шашки 0 - черный 1 - белый
 
-        public Brush Fill => Color ? Brushes.White : Brushes.Black;
+        private Brush _fill;
+
+        public Brush Fill
+        {
+            get => _fill;
+            set
+            {
+                _fill = value;
+                OnPropertyChanged("Fill");
+            }
+        }
 
         public CheckerViewModel(Checker checker)
         {
-            _checker = checker;
+            _checkerModel = checker;
             Row = checker.FromX;
             Column = checker.FromY;
+            Color = _checkerModel.IsWhite;
+            _fill = Color ? Brushes.White : Brushes.Black;
         }
 
 
@@ -90,7 +102,21 @@ namespace Checkers
     {
         public int Row { get; }
         public int Col { get; }
-        public Brush Background => new SolidColorBrush(Color.FromRgb(119, 149, 86));
+
+        private Brush _background = new SolidColorBrush(Color.FromRgb(119, 149, 86));
+
+        public Brush Background
+        {
+            get => _background;
+            set
+            {
+                if (_background != value)
+                {
+                    _background = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
         private CheckerViewModel? _checker;
 
 
@@ -195,7 +221,6 @@ namespace Checkers
             }
         }
 
-        //public BoardViewModel()
         // Логика отображения экранов
         private bool _isGameScreenVisible;
         private bool _isNetworkGameScreenVisible;
@@ -214,7 +239,6 @@ namespace Checkers
             }
         }
 
-        //CellClickCommand = new RelayCommand(param => OnCellClick((CellViewModel) param));
         // Флаг: сетевая игра
         public bool IsNetworkGameScreenVisible
         {
@@ -277,7 +301,7 @@ namespace Checkers
             });
 
             // Обработка клика по клетке
-            CellClickCommand = new RelayCommand(param => OnCellClick((CellViewModel)param));
+            CellClickCommand = new RelayCommand(param => Move((CellViewModel)param));
 
             // Генерация клеток доски
             Cells = new ObservableCollection<CellViewModel>();
@@ -294,6 +318,7 @@ namespace Checkers
                         };
 
                         var checker = _board.Cells[i, j]; // Получаем шашку из модели
+                        //var col = checker.IsWhite;
                         if (checker != null)
                         {
                             cell.Checker = new CheckerViewModel(checker);
@@ -315,14 +340,132 @@ namespace Checkers
         }
  
          // Обработка нажатия на клетку
-        private void OnCellClick(CellViewModel cell)
+        private void Move(CellViewModel cell)
         {
-            // какой-то обработчик нажатия на ячейку пока просто показывает координаты клетки
-            // Пока просто показываем координаты
-            MessageBox.Show(cell.Row.ToString() + " " + cell.Col.ToString());
-        }
+            List<List<(int, int)>> paths = new List<List<(int, int)>>();
 
-        // Реализация интерфейса INotifyPropertyChanged
+            if (cell.Checker != null)
+            {
+                if (SelectedCell != null)
+                {
+                    var oldpath = _board.GetPath(SelectedCell.Row, SelectedCell.Col);
+                    foreach (var path in oldpath)
+                    {
+                        foreach (var (i, j) in path)
+                        {
+                            Cells[i * 4 + j / 2].Background = new SolidColorBrush(Color.FromRgb(119, 149, 86));
+                        }
+                    }
+                }
+                paths = _board.GetPath(cell.Row, cell.Col);
+                foreach (var path in paths)
+                {
+                    foreach (var (i, j) in path)
+                    {
+                        if ((cell.Row != i || cell.Col != j) && !cell.Checker._checkerModel.IsKing)
+                            Cells[i * 4 + j / 2].Background = new SolidColorBrush(Color.FromRgb(0, 200, 0));
+                        else if (cell.Checker._checkerModel.IsKing && (cell.Row != i || cell.Col != j))
+                            Cells[i * 4 + j / 2].Background = new SolidColorBrush(Color.FromRgb(0, 0, 0));
+                    }
+                    Cells[path[path.Count - 1].Item1 * 4 + path[path.Count - 1].Item2 / 2].Background = new SolidColorBrush(Color.FromRgb(0, 0, 0));
+                    
+                }
+            }
+            if (SelectedCell != null && SelectedCell.Checker != null && cell.Checker != null)
+            {
+                SelectedCell = cell;
+                return;
+            }
+            if (cell.Checker != null && SelectedCell == null || cell.Checker == null && SelectedCell != null)
+            {
+
+                if (SelectedCell == null)
+                {
+                    SelectedCell = cell;
+                    return;
+                }
+
+                var oldpaths = _board.GetPath(SelectedCell.Row, SelectedCell.Col);
+                foreach (var path in oldpaths)
+                {
+                    foreach (var (i, j) in path)
+                    {
+                        Cells[i * 4 + j / 2].Background = new SolidColorBrush(Color.FromRgb(119, 149, 86));
+                    }
+                }
+                bool canMove = false;
+                List<(int, int)> mypath = new List<(int, int)>();
+                foreach (var path in oldpaths)
+                {
+                    foreach (var (i, j) in path)
+                    {
+                        if (Cells[i * 4 + j / 2] == cell)
+                        {
+                            canMove = true;
+                            mypath = path;
+                            break;
+                        }
+                    }
+                }
+                if (canMove)
+                {
+                    int row = SelectedCell.Row;
+                    int col = SelectedCell.Col;
+                    foreach (var (i, j) in mypath)
+                    {
+                        if (SelectedCell.Checker._checkerModel.IsKing)
+                        {
+                            var x = i - row > 0 ? 1 : - 1;
+                            var y = j - col > 0 ? 1 : - 1;
+                            int p = 1;
+                            var r = row + x * p;
+                            var c = col + y * p;
+                            if (i == SelectedCell.Row && j == SelectedCell.Col)
+                                continue;
+                            while (r < 8 && r >= 0 && c < 8 && c >= 0 && _board.Cells[r, c] == null && r != cell.Row && c != cell.Col)
+                            {
+                                p++;
+                                r = row + x * p;
+                                c = col + y * p;
+                            }
+                            if (cell.Row != r || cell.Col != c)
+                            {
+                                _board.Cells[row + x * p, col + y * p] = null;
+                                Cells[(row + x * p) * 4 + (col + y * p) / 2].Checker = null;
+                                row = i;
+                                col = j;
+                            }
+                        }
+                        else if ((Math.Abs(row - i) == 2 || Math.Abs(col - j) == 2) && cell.Row == mypath[mypath.Count-1].Item1 && cell.Col == mypath[mypath.Count-1].Item2)
+                        {
+                            var x = i - row > 0 ? i - 1 : i + 1;
+                            var y = j - col > 0 ? j - 1 : j + 1;
+
+                            _board.Cells[x, y] = null;
+                            Cells[x * 4 + y / 2].Checker = null;
+                            row = i;
+                            col = j;
+
+                        }
+                    }
+                    // сам ход 
+                    if (cell.Row == mypath[mypath.Count - 1].Item1 && cell.Col == mypath[mypath.Count - 1].Item2 || SelectedCell.Checker._checkerModel.IsKing)
+                    {
+                        _board.Cells[cell.Row, cell.Col] = _board.Cells[SelectedCell.Row, SelectedCell.Col];
+                        _board.Cells[SelectedCell.Row, SelectedCell.Col] = null;
+                        cell.Checker = SelectedCell.Checker;
+                        cell.Checker.Fill = SelectedCell.Checker.Fill;
+                        if (cell.Row == 0 || cell.Row == 7)
+                            cell.Checker._checkerModel.IsKing = true;
+                        SelectedCell.Checker = null;
+                        SelectedCell = null;
+                    }
+                }
+            }
+
+        }
+        
+
         public event PropertyChangedEventHandler? PropertyChanged;
         protected void OnPropertyChanged([CallerMemberName] string name = null)
         {
