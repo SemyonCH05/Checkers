@@ -208,48 +208,6 @@ namespace Checkers
         private bool InBoard(int row, int col)
             => row >= 0 && row < 8 && col >= 0 && col < 8;
 
-        //private void DFSQuenn(int row, int col, List<(int, int)> path, List<List<(int, int)>> result)
-        //{
-        //    bool foundJump = false;
-        //    List<(int, int)> jumpingCells = new List<(int, int)>
-        //    {
-        //        (row+2, col-2),
-        //        (row +2, col+2),
-        //        (row -2, col-2),
-        //        (row -2, col+2),
-        //    };
-
-        //    //for (int i = 2; i <= 6; i++)
-        //    //{
-        //    //    for (int j = 2; j <= 7; j++)
-        //    //    {
-        //    //        jumpingCells.Add((row + i, col + j));
-        //    //    }
-        //    //}
-
-        //    foreach (var (i, j) in jumpingCells)
-        //    {
-        //        if (i < 8 && i >= 0 && j < 8 && j >= 0 && Cells[i, j] == null)
-        //        {
-        //            var x = i - row > 0 ? i - 1 : i + 1;
-        //            var y = j - col > 0 ? j - 1 : j + 1;
-        //            if (Cells[x, y] != null && Cells[x, y].IsWhite != Cells[path[0].Item1, path[0].Item2].IsWhite && !path.Contains((i, j)))
-        //            {
-        //                foundJump = true;
-        //                var newPath = new List<(int, int)>(path)
-        //                {
-        //                    (i, j)
-        //                };
-        //                DFSQuenn(i, j, newPath, result);
-
-        //            }
-        //        }
-        //    }
-
-        //    if (!foundJump && path.Count > 1)
-        //    {
-        //        result.Add(path);
-        //    }
-        //}
+        
     }
 }
