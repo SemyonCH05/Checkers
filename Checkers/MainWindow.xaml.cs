@@ -24,7 +24,7 @@ namespace Checkers
         {
             InitializeComponent();
             _boardViewModel = new BoardViewModel();
-            DataContext = _boardViewModel;
+            //DataContext = _boardViewModel;
         }
         private void StartGame_Click(object sender, RoutedEventArgs e)
         {
@@ -41,26 +41,16 @@ namespace Checkers
         }
     }
 
-        private void GridSizeChanged(object sender, SizeChangedEventArgs e) // изменение размера всего при изменении размера окна
+
+    // чтобы круг был чуть меньше ячейки
+    public class InnerCheckerSizeConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+            => (value is double d) ? d * 0.8 : 0;
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            var gridd = (Grid)sender;
-            double cellSize = Math.Min(gridd.ActualWidth / gridd.ColumnDefinitions.Count, gridd.ActualHeight / gridd.RowDefinitions.Count);
-
-            foreach (var row in grid.RowDefinitions)
-            {
-                row.Height = new GridLength(cellSize);
-            }
-
-            foreach (var column in grid.ColumnDefinitions)
-            {
-                column.Width = new GridLength(cellSize);
-            }
-
-            foreach (var canv in canvasDict.Values)
-            {
-                canv.Width = cellSize;
-                canv.Height = cellSize;
-            }
+            throw new NotImplementedException();
         }
     }
 }
