@@ -23,8 +23,10 @@ namespace Checkers
         public MainWindow()
         {
             InitializeComponent();
+
             _boardViewModel = new BoardViewModel();
             //DataContext = _boardViewModel;
+
         }
         private void StartGame_Click(object sender, RoutedEventArgs e)
         {
