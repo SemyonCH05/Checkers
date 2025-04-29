@@ -17,22 +17,28 @@ namespace Checkers
     /// </summary>
     public partial class MainWindow : Window
     {
+
+
         BoardViewModel _boardViewModel;
         public MainWindow()
         {
             InitializeComponent();
+
             _boardViewModel = new BoardViewModel();
-            DataContext = _boardViewModel;
+            //DataContext = _boardViewModel;
+
         }
         private void StartGame_Click(object sender, RoutedEventArgs e)
         {
             MenuScreen.Visibility = Visibility.Collapsed;
             GameScreen.Visibility = Visibility.Visible;
         }
+
+
         private void Size(object sender, SizeChangedEventArgs e)
         {
             var grid = (Grid)sender;
-            double cellSize = Math.Min(grid.ActualWidth / 8, grid.ActualHeight / 8); 
+            double cellSize = Math.Min(grid.ActualWidth / 8, grid.ActualHeight / 8);
             _boardViewModel.UpdateCellSize(cellSize);
         }
     }
