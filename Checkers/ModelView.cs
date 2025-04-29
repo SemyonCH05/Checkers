@@ -203,6 +203,7 @@ namespace Checkers
         public ICommand StartGameCommand { get; }
         public ICommand BackToMenuCommand { get; }
         public ICommand StartNetworkGameCommand { get; } // Сетевая игра
+        public ICommand StartSettingsCommand { get; } // Настройки
 
         // Выделенная клетка
         public CellViewModel SelectedCell
@@ -224,6 +225,7 @@ namespace Checkers
         // Логика отображения экранов
         private bool _isGameScreenVisible;
         private bool _isNetworkGameScreenVisible;
+        private bool _isSettingsScreenVisible;
 
         // Флаг: обычная игра
         public bool IsGameScreenVisible
@@ -236,6 +238,7 @@ namespace Checkers
                 OnPropertyChanged(nameof(IsMenuVisible));
                 OnPropertyChanged(nameof(IsGameVisible));
                 OnPropertyChanged(nameof(IsNetworkGameVisible));
+                OnPropertyChanged(nameof(IsSettingsVisible));
             }
         }
 
@@ -250,6 +253,23 @@ namespace Checkers
                 OnPropertyChanged(nameof(IsMenuVisible));
                 OnPropertyChanged(nameof(IsGameVisible));
                 OnPropertyChanged(nameof(IsNetworkGameVisible));
+                OnPropertyChanged(nameof(IsSettingsVisible));
+            }
+        }
+
+        // Флаг: настройки
+
+        public bool IsSettingsScreenVisible
+        {
+            get => _isSettingsScreenVisible;
+            set
+            {
+                _isSettingsScreenVisible = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(IsMenuVisible));
+                OnPropertyChanged(nameof(IsGameVisible));
+                OnPropertyChanged(nameof(IsNetworkGameVisible));
+                OnPropertyChanged(nameof(IsSettingsVisible));
             }
         }
 
@@ -257,6 +277,8 @@ namespace Checkers
         public Visibility IsMenuVisible => (!IsGameScreenVisible && !IsNetworkGameScreenVisible) ? Visibility.Visible : Visibility.Collapsed;
         public Visibility IsGameVisible => (IsGameScreenVisible && !IsNetworkGameScreenVisible) ? Visibility.Visible : Visibility.Collapsed;
         public Visibility IsNetworkGameVisible => IsNetworkGameScreenVisible ? Visibility.Visible : Visibility.Collapsed;
+
+        public Visibility IsSettingsVisible => IsSettingsScreenVisible ? Visibility.Visible : Visibility.Collapsed;
 
         // Размер клетки (используется при ресайзе окна)
         public double CellSize
@@ -281,6 +303,7 @@ namespace Checkers
             // Начальное состояние — показываем меню
             IsGameScreenVisible = false;
             IsNetworkGameScreenVisible = false;
+            IsSettingsScreenVisible = false;
 
             // Команда запуска одиночной игры
             StartGameCommand = new RelayCommand(_ => {
@@ -294,10 +317,18 @@ namespace Checkers
                 IsNetworkGameScreenVisible = true;
             });
 
+            // Команда запуска настроек
+            StartSettingsCommand = new RelayCommand(_ => {
+                IsGameScreenVisible = false;
+                IsNetworkGameScreenVisible = false;
+                IsSettingsScreenVisible = true;
+            });
+
             // Возврат в меню
             BackToMenuCommand = new RelayCommand(_ => {
                 IsGameScreenVisible = false;
                 IsNetworkGameScreenVisible = false;
+                IsSettingsScreenVisible = false;
             });
 
             // Обработка клика по клетке
