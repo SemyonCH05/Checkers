@@ -24,7 +24,7 @@ namespace Checkers
         {
             InitializeComponent();
             _boardViewModel = new BoardViewModel();
-            //DataContext = _boardViewModel;
+            DataContext = new ScreenViewModel();
         }
         private void StartGame_Click(object sender, RoutedEventArgs e)
         {
