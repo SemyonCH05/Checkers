@@ -14,42 +14,6 @@ using System.Windows.Shapes;
 
 namespace Checkers
 {
-
-    public class MainViewModel : INotifyPropertyChanged
-    {
-
-        private bool _isGameScreenVisible;
-        public bool IsGameScreenVisible
-        {
-            get => _isGameScreenVisible;
-            set
-            {
-                _isGameScreenVisible = value;
-                OnPropertyChanged();
-                OnPropertyChanged(nameof(IsMenuVisible));
-                OnPropertyChanged(nameof(IsGameVisible));
-            }
-        }
-        public Visibility IsMenuVisible => IsGameScreenVisible ? Visibility.Collapsed : Visibility.Visible;
-        public Visibility IsGameVisible => IsGameScreenVisible ? Visibility.Visible : Visibility.Collapsed;
-
-        // Команды
-        public ICommand StartGameCommand { get; }
-        public ICommand BackToMenuCommand { get; }
-
-        public MainViewModel()
-        {
-            IsGameScreenVisible = false;
-            StartGameCommand = new RelayCommand(_ => IsGameScreenVisible = true);
-            BackToMenuCommand = new RelayCommand(_ => IsGameScreenVisible = false); // новая команда
-        }
-
-        public event PropertyChangedEventHandler? PropertyChanged;
-        private void OnPropertyChanged([System.Runtime.CompilerServices.CallerMemberName] string name = null)
-            => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
-
-
-    }
     class CheckerViewModel : INotifyPropertyChanged
     {
         public Checker _checkerModel;
@@ -282,19 +246,36 @@ namespace Checkers
             IsNetworkGameScreenVisible = true;
         }
 
-        public void StartNetworkCreate()
+        public async void StartNetworkCreate()
         {
             BoardViewModel = new BoardViewModel();
 
-            Server server = new Server();
-            MessageBox.Show(server.CreateServer());
+            var server = BoardViewModel.server;
+
+            server = new Server();
+            server.OpponentMoved += BoardViewModel.OnOpponentMoved;
+            var info = await server.CreateServer();
+            MessageBox.Show(info);
             IsGameScreenVisible = true;
             IsNetworkGameScreenVisible = false;
         }
 
-        public void StartNetworkConnect()
+        public async void StartNetworkConnect()
         {
+            ConnectServer IpWindow = new ConnectServer();
+
+            if (IpWindow.ShowDialog() == true)
+            {
+                MessageBox.Show($"Ip адрес получен: {IpWindow.IpAdress.ToString()}");
+            }
+
             BoardViewModel = new BoardViewModel(true);
+
+            var client = BoardViewModel.client;
+            client = new Client();
+            client.OpponentMoved += BoardViewModel.OnOpponentMoved;
+            await client.Connect(IpWindow.IpAdress);
+
 
             IsGameScreenVisible = true;
             IsNetworkGameScreenVisible = false;
@@ -310,6 +291,10 @@ namespace Checkers
     // ViewModel доски
     class BoardViewModel : INotifyPropertyChanged
     {
+        public Server? server;
+        public Client? client;
+
+
         private Board _board; // Модель доски
         private double _cellSize; // Размер клетки
 
@@ -357,6 +342,11 @@ namespace Checkers
 
         // Сетевая или нет игра
         bool IsNetWork;
+
+        public void OnOpponentMoved(int[] data)
+        {
+            UpdateBoard(data);
+        }
 
         // Конструктор
         public BoardViewModel(bool isNetwork = false)
@@ -409,7 +399,7 @@ namespace Checkers
         }
  
          // Обработка нажатия на клетку
-        private void Move(CellViewModel cell)
+        private async void Move(CellViewModel cell)
         {
             List<List<(int, int)>> paths = new List<List<(int, int)>>();
 
@@ -520,6 +510,19 @@ namespace Checkers
                     // сам ход 
                     if (cell.Row == mypath[mypath.Count - 1].Item1 && cell.Col == mypath[mypath.Count - 1].Item2 || SelectedCell.Checker._checkerModel.IsKing)
                     {
+                        if (server != null)
+                        {
+                            int isWhite = SelectedCell.Checker._checkerModel.IsWhite ? 1 : 0;
+                            string send = $"{Math.Abs(SelectedCell.Row-7)} {Math.Abs(SelectedCell.Col-7)} {Math.Abs(cell.Row-7)} {Math.Abs(cell.Col - 7)} {isWhite}";
+                            await server.SendAsync(send);
+                        }
+
+                        else if (client  != null)
+                        {
+                            int isWhite = SelectedCell.Checker._checkerModel.IsWhite ? 1 : 0;
+                            string send = $"{Math.Abs(SelectedCell.Row - 7)} {Math.Abs(SelectedCell.Col - 7)} {Math.Abs(cell.Row - 7)} {Math.Abs(cell.Col - 7)} {isWhite}";
+                            await client.SendAsync(send);
+                        }
                         _board.Cells[cell.Row, cell.Col] = _board.Cells[SelectedCell.Row, SelectedCell.Col];
                         
                         _board.Cells[SelectedCell.Row, SelectedCell.Col] = null;
@@ -533,6 +536,23 @@ namespace Checkers
                 }
             }
 
+        }
+
+        public void UpdateBoard(int[] data)
+        {
+            int r1 = data[0];
+            int c1 = data[1];
+            int r2 = data[2];
+            int c2 = data[3];
+            bool IsKing = data[4] == 1 ? true : false;
+            _board.Cells[r2, c2] = _board.Cells[r1, c1];
+
+            _board.Cells[r1, c1] = null;
+            Cells[r1 * 4 + c1 / 2].Checker = Cells[r2 * 4 + c2 / 2].Checker;
+            Cells[r1 * 4 + c1 / 2].Checker.Fill = Cells[r2 * 4 + c2 / 2].Checker.Fill;
+
+            Cells[r2 * 4 + c2 / 2].Checker = null;
+            Cells[r2 * 4 + c2 / 2] = null;
         }
         
 
