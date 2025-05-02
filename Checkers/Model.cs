@@ -2,12 +2,108 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
+using System.Net.Sockets;
+using System.Net;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace Checkers
 {
+
+    class Server
+    {
+        TcpListener tcpListener;
+
+        public Server()
+        {
+            tcpListener = new TcpListener(IPAddress.Any, 8888);
+        }
+
+        public string CreateServer()
+        {
+            tcpListener.Start();
+
+            var hostAddresses = Dns.GetHostAddresses(Dns.GetHostName());
+            var ipv4 = hostAddresses.FirstOrDefault(a => a.AddressFamily == AddressFamily.InterNetwork);
+
+            return $"Сервер запущен на {ipv4} -- {((IPEndPoint)tcpListener.LocalEndpoint).Port}";
+        }
+
+        public async void MessageServer()
+        {
+            try
+            {
+                
+                while (true)
+                {
+                    using var tcpClient = await tcpListener.AcceptTcpClientAsync();
+                    var stream = tcpClient.GetStream();
+                    Console.WriteLine($"К серверу подключен клиент под {tcpClient.Client.RemoteEndPoint}");
+                    var response = new List<byte>();
+                    int bytesRead = 10;
+                    while (true)
+                    {
+                        Console.WriteLine("Чё хочешь отправить клиенту, пиши:");
+                        var send = Console.ReadLine();
+                        if (send != "")
+                        {
+                            await stream.WriteAsync(Encoding.UTF8.GetBytes(send + '\n'));
+                            response.Clear();
+                        }
+
+                        while ((bytesRead = stream.ReadByte()) != '\n')
+                            response.Add((byte)bytesRead);
+                        var word = UTF8Encoding.UTF8.GetString(response.ToArray());
+                        if (word == "END")
+                            break;
+
+                        Console.WriteLine($"пришло сообщение от клиента: {word}");
+                    }
+                }
+            }
+            finally
+            {
+                tcpListener.Stop();
+            }
+        }
+    }
+
+    class Client
+    {
+        TcpClient tcpClient;
+        public Client()
+        {
+            tcpClient = new TcpClient();
+        }
+
+        public async void CreateConnect()
+        {
+            await tcpClient.ConnectAsync("192.168.31.160", 8888); // Укажите IP-адрес и порт сервера  
+
+            Console.WriteLine("Подключение установлено");
+
+            var stream = tcpClient.GetStream();
+            var response = new List<byte>();
+            int bytesRead = 10;
+            while (true)
+            {
+                while ((bytesRead = stream.ReadByte()) != '\n')
+                    response.Add((byte)bytesRead);
+                var word = UTF8Encoding.UTF8.GetString(response.ToArray());
+                if (word == "END")
+                    break;
+                response.Clear();
+                Console.WriteLine($"пришло сообщение от сервера: {word}");
+
+                Console.WriteLine("Че хочешь отправить на сервер, пиши:");
+                var myWord = Console.ReadLine();
+
+                if (myWord != "")
+                    await stream.WriteAsync(Encoding.UTF8.GetBytes(myWord + '\n'));
+            }
+        }
+    }
     class Checker
     {
         public bool IsKing { get; set; }
@@ -37,21 +133,36 @@ namespace Checkers
     {
         public Checker?[,] Cells { get; } = new Checker[8, 8];
 
-        public Board()
+        public bool IsNetwork;
+
+        public Board(bool isNetwork = false)
         {
+            IsNetwork = isNetwork;
             for (int i = 0; i < 8; i++)
             {
                 for (int j = 0; j < 8; j++)
                 {
                     if ((i + j) % 2 != 0)
                     {
-                        if (i < 3)
-                            Cells[i, j] = new Checker(false, false, i, j); // чёрные
-                        else if (i > 4)
-                            Cells[i, j] = new Checker(true, false, i, j);  // белые
+                        if (!IsNetwork)
+                        {
+                            if (i < 3)
+                                Cells[i, j] = new Checker(false, false, i, j); // чёрные
+                            else if (i > 4)
+                                Cells[i, j] = new Checker(true, false, i, j);  // белые
+                        }
+                        else
+                        {
+                            if (i < 3)
+                                Cells[i, j] = new Checker(true, false, i, j); // чёрные
+                            else if (i > 4)
+                                Cells[i, j] = new Checker(false, false, i, j);  // белые
+                        }
+
                     }
                 }
             }
+
         }
 
         public List<List<(int,int)>> GetPath(int startRow, int startCol)
@@ -65,15 +176,29 @@ namespace Checkers
             DFS(startRow, startCol, initialPath, paths); // поиск прыжков
 
             if (paths.Count == 0)
-            {  
-                if (startRow + 1 < 8 && startCol - 1 >= 0 && Cells[startRow + 1, startCol - 1] == null && !Cells[startRow, startCol].IsWhite)
-                    paths.Add(new List<(int, int)> { (startRow, startCol), (startRow + 1, startCol - 1) });
-                if (startRow + 1 < 8 && startCol + 1 < 8 && Cells[startRow + 1, startCol + 1] == null && !Cells[startRow, startCol].IsWhite)
-                    paths.Add(new List<(int, int)> { (startRow, startCol), (startRow + 1, startCol + 1) });
-                if (startRow - 1 >= 0 && startCol - 1 >= 0 && Cells[startRow - 1, startCol - 1] == null && Cells[startRow, startCol].IsWhite)
-                    paths.Add(new List<(int, int)> { (startRow, startCol), (startRow - 1, startCol - 1) });
-                if (startRow - 1 >= 0 && startCol + 1 < 8 && Cells[startRow - 1, startCol + 1] == null && Cells[startRow, startCol].IsWhite)
-                    paths.Add(new List<(int, int)> { (startRow, startCol), (startRow - 1, startCol + 1) });
+            {
+                if (!IsNetwork)
+                {
+                    if (startRow + 1 < 8 && startCol - 1 >= 0 && Cells[startRow + 1, startCol - 1] == null && !Cells[startRow, startCol].IsWhite)
+                        paths.Add(new List<(int, int)> { (startRow, startCol), (startRow + 1, startCol - 1) });
+                    if (startRow + 1 < 8 && startCol + 1 < 8 && Cells[startRow + 1, startCol + 1] == null && !Cells[startRow, startCol].IsWhite)
+                        paths.Add(new List<(int, int)> { (startRow, startCol), (startRow + 1, startCol + 1) });
+                    if (startRow - 1 >= 0 && startCol - 1 >= 0 && Cells[startRow - 1, startCol - 1] == null && Cells[startRow, startCol].IsWhite)
+                        paths.Add(new List<(int, int)> { (startRow, startCol), (startRow - 1, startCol - 1) });
+                    if (startRow - 1 >= 0 && startCol + 1 < 8 && Cells[startRow - 1, startCol + 1] == null && Cells[startRow, startCol].IsWhite)
+                        paths.Add(new List<(int, int)> { (startRow, startCol), (startRow - 1, startCol + 1) });
+                }
+                else
+                {
+                    if (startRow + 1 < 8 && startCol - 1 >= 0 && Cells[startRow + 1, startCol - 1] == null && Cells[startRow, startCol].IsWhite)
+                        paths.Add(new List<(int, int)> { (startRow, startCol), (startRow + 1, startCol - 1) });
+                    if (startRow + 1 < 8 && startCol + 1 < 8 && Cells[startRow + 1, startCol + 1] == null && Cells[startRow, startCol].IsWhite)
+                        paths.Add(new List<(int, int)> { (startRow, startCol), (startRow + 1, startCol + 1) });
+                    if (startRow - 1 >= 0 && startCol - 1 >= 0 && Cells[startRow - 1, startCol - 1] == null && !Cells[startRow, startCol].IsWhite)
+                        paths.Add(new List<(int, int)> { (startRow, startCol), (startRow - 1, startCol - 1) });
+                    if (startRow - 1 >= 0 && startCol + 1 < 8 && Cells[startRow - 1, startCol + 1] == null && !Cells[startRow, startCol].IsWhite)
+                        paths.Add(new List<(int, int)> { (startRow, startCol), (startRow - 1, startCol + 1) });
+                }
             } 
 
             return paths;

@@ -8,7 +8,7 @@
          Title="Play" Height="480" Width="480">
 
     <Window.DataContext>
-        <local:BoardViewModel/>
+        <local:ScreenViewModel/>
     </Window.DataContext>
 
     <Window.Resources>
@@ -24,7 +24,7 @@
             <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
                 <TextBlock Text="Выберите режим игры:"
                             FontSize="16" TextWrapping="Wrap" TextAlignment="Center" Margin="20" Foreground="#FEFEFE"/>
-                    <Button Content="Одиночная игра" Command="{Binding StartGameCommand}"
+                    <Button Content="Одиночная игра" Command="{Binding StartGameCommandAlone}"
                          Background="#FEFEFE" Foreground="#252525" Padding="10" FontSize="14" Width="250" Height="40"/>
 
                     <Button Content="Сетевая игра" Command="{Binding StartNetworkGameCommand}"
@@ -36,19 +36,21 @@
             <Grid x:Name="NetworkGameScreen" Background="#252525" Visibility="{Binding IsNetworkGameVisible}">
                 <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
                     <TextBlock Text="Сетевая игра" FontSize="16" Margin="20" Foreground="#FEFEFE" VerticalAlignment="Center" HorizontalAlignment="Center"/>
-                    <Button Content="Создать игру" Command="{Binding StartGameCommand}"
+                    <Button Content="Создать игру" Command="{Binding StartGameCommandCreate}"
          Background="#FEFEFE" Foreground="#252525" Padding="10" FontSize="14" Width="250" Height="40"/>
 
-                    <Button Content="Подключиться" Command="{Binding StartGameCommand}"
+                    <Button Content="Подключиться" Command="{Binding StartGameCommandConnect}"
          Background="#FEFEFE" Foreground="#252525" Padding="10" FontSize="14" Margin="0,20,0,0" Width="250" Height="40"/>
-                </StackPanel>
+                <Button Content="Обратно в меню" Command="{Binding BackToMenuCommand}"
+                        Background="#FEFEFE" Foreground="#252525" Padding="10" FontSize="14" Margin="0,20,0,0" Width="250" Height="40"/>
+            </StackPanel>
             </Grid>
 
             <!-- ЭКРАН ИГРЫ -->
             <Grid x:Name="GameScreen" Background="#EBECD0" Visibility="{Binding IsGameVisible}">
 
                 <!-- ПОЛЕ С ИГРОЙ -->
-                <ItemsControl ItemsSource="{Binding Cells}">
+                <ItemsControl ItemsSource="{Binding BoardViewModel.Cells}">
                 <ItemsControl.ItemsPanel>
                     <ItemsPanelTemplate>
                         <Grid Background="#EBECD0" SizeChanged="Size" >
