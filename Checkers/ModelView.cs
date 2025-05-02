@@ -249,12 +249,9 @@ namespace Checkers
         public async void StartNetworkCreate()
         {
             BoardViewModel = new BoardViewModel();
-
-            var server = BoardViewModel.server;
-
-            server = new Server();
-            server.OpponentMoved += BoardViewModel.OnOpponentMoved;
-            var info = await server.CreateServer();
+            BoardViewModel.server = new Server();
+            BoardViewModel.server.OpponentMoved += BoardViewModel.OnOpponentMoved;
+            var info = await BoardViewModel.server.CreateServer();
             MessageBox.Show(info);
             IsGameScreenVisible = true;
             IsNetworkGameScreenVisible = false;
@@ -271,10 +268,9 @@ namespace Checkers
 
             BoardViewModel = new BoardViewModel(true);
 
-            var client = BoardViewModel.client;
-            client = new Client();
-            client.OpponentMoved += BoardViewModel.OnOpponentMoved;
-            await client.Connect(IpWindow.IpAdress);
+            BoardViewModel.client = new Client();
+            BoardViewModel.client.OpponentMoved += BoardViewModel.OnOpponentMoved;
+            await BoardViewModel.client.Connect(IpWindow.IpAdress);
 
 
             IsGameScreenVisible = true;
@@ -548,11 +544,11 @@ namespace Checkers
             _board.Cells[r2, c2] = _board.Cells[r1, c1];
 
             _board.Cells[r1, c1] = null;
-            Cells[r1 * 4 + c1 / 2].Checker = Cells[r2 * 4 + c2 / 2].Checker;
-            Cells[r1 * 4 + c1 / 2].Checker.Fill = Cells[r2 * 4 + c2 / 2].Checker.Fill;
+            Cells[r2 * 4 + c2 / 2].Checker = Cells[r1 * 4 + c1 / 2].Checker;
+            Cells[r2 * 4 + c2 / 2].Checker.Fill = Cells[r1 * 4 + c1 / 2].Checker.Fill;
 
-            Cells[r2 * 4 + c2 / 2].Checker = null;
-            Cells[r2 * 4 + c2 / 2] = null;
+            Cells[r1 * 4 + c1 / 2].Checker = null;
+            Cells[r1 * 4 + c1 / 2] = null;
         }
         
 
