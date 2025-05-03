@@ -512,8 +512,7 @@ namespace Checkers
                     // сам ход 
                     if (cell.Row == mypath[mypath.Count - 1].Item1 && cell.Col == mypath[mypath.Count - 1].Item2 || SelectedCell.Checker._checkerModel.IsKing)
                     {
-                        if (cell.Row == 0 || cell.Row == 7)
-                            cell.Checker._checkerModel.IsKing = true;
+                        
 
                         if (server != null)
                         {
@@ -528,6 +527,9 @@ namespace Checkers
                             string send = $"{Math.Abs(SelectedCell.Row - 7)} {Math.Abs(SelectedCell.Col - 7)} {Math.Abs(cell.Row - 7)} {Math.Abs(cell.Col - 7)} {isKing}";
                             await client.SendAsync(send);
                         }
+
+                        
+
                         _board.Cells[cell.Row, cell.Col] = _board.Cells[SelectedCell.Row, SelectedCell.Col];
                         
                         _board.Cells[SelectedCell.Row, SelectedCell.Col] = null;
@@ -536,7 +538,9 @@ namespace Checkers
                         var cellfromSelected = SelectedCell.Checker;
                         cell.Checker = SelectedCell.Checker;
                         cell.Checker.Fill = SelectedCell.Checker.Fill;
-                        
+
+                        if (cell.Row == 0 || cell.Row == 7)
+                            cell.Checker._checkerModel.IsKing = true;
 
                         SelectedCell.Checker = null;
                         SelectedCell = null;
@@ -549,6 +553,7 @@ namespace Checkers
 
         public void UpdateBoard(int[] data)
         {
+            // ДОБАВИТЬ МЕТОД У РИНАТА
             int r1 = data[0];
             int c1 = data[1];
             int r2 = data[2];
