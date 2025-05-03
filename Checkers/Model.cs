@@ -33,12 +33,23 @@ namespace Checkers
 
         private async Task ListenLoop(CancellationToken ct)
         {
-            while (!ct.IsCancellationRequested)
+            try
             {
-                var message = await _reader.ReadLineAsync();
-                if (message == null || message == "END")
-                    break;
-                MessageReceived?.Invoke(message);
+                while (!ct.IsCancellationRequested)
+                {
+                    var message = await _reader.ReadLineAsync();  // ждём до '\n'
+                    if (message == null)   // если клиент закрыл соединение
+                        break;
+
+                    // УБИРАЕМ любое условие типа `if (message == "END") break;`
+                    // пока не хотим разрывать связь по протоколу.
+
+                    MessageReceived?.Invoke(message);
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine("ListenLoop упал: " + ex);
             }
         }
 

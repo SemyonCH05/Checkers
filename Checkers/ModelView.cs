@@ -250,7 +250,10 @@ namespace Checkers
         {
             BoardViewModel = new BoardViewModel();
             BoardViewModel.server = new Server();
-            BoardViewModel.server.OpponentMoved += BoardViewModel.OnOpponentMoved;
+            BoardViewModel.server.OpponentMoved += move =>
+            {
+                Application.Current.Dispatcher.Invoke(() => BoardViewModel.OnOpponentMoved(move));
+            };
             var info = await BoardViewModel.server.CreateServer();
             MessageBox.Show(info);
             IsGameScreenVisible = true;
@@ -269,7 +272,10 @@ namespace Checkers
             BoardViewModel = new BoardViewModel(true);
 
             BoardViewModel.client = new Client();
-            BoardViewModel.client.OpponentMoved += BoardViewModel.OnOpponentMoved;
+            BoardViewModel.client.OpponentMoved += move =>
+            {
+                Application.Current.Dispatcher.Invoke(() => BoardViewModel.OnOpponentMoved(move));
+            }; ;
             await BoardViewModel.client.Connect(IpWindow.IpAdress);
 
 
@@ -506,28 +512,35 @@ namespace Checkers
                     // сам ход 
                     if (cell.Row == mypath[mypath.Count - 1].Item1 && cell.Col == mypath[mypath.Count - 1].Item2 || SelectedCell.Checker._checkerModel.IsKing)
                     {
+                        if (cell.Row == 0 || cell.Row == 7)
+                            cell.Checker._checkerModel.IsKing = true;
+
                         if (server != null)
                         {
-                            int isWhite = SelectedCell.Checker._checkerModel.IsWhite ? 1 : 0;
-                            string send = $"{Math.Abs(SelectedCell.Row-7)} {Math.Abs(SelectedCell.Col-7)} {Math.Abs(cell.Row-7)} {Math.Abs(cell.Col - 7)} {isWhite}";
+                            int isKing = SelectedCell.Checker._checkerModel.IsKing ? 1 : 0;
+                            string send = $"{Math.Abs(SelectedCell.Row - 7)} {Math.Abs(SelectedCell.Col - 7)} {Math.Abs(cell.Row - 7)} {Math.Abs(cell.Col - 7)} {isKing}";
                             await server.SendAsync(send);
                         }
 
-                        else if (client  != null)
+                        else if (client != null)
                         {
-                            int isWhite = SelectedCell.Checker._checkerModel.IsWhite ? 1 : 0;
-                            string send = $"{Math.Abs(SelectedCell.Row - 7)} {Math.Abs(SelectedCell.Col - 7)} {Math.Abs(cell.Row - 7)} {Math.Abs(cell.Col - 7)} {isWhite}";
+                            int isKing = SelectedCell.Checker._checkerModel.IsKing ? 1 : 0;
+                            string send = $"{Math.Abs(SelectedCell.Row - 7)} {Math.Abs(SelectedCell.Col - 7)} {Math.Abs(cell.Row - 7)} {Math.Abs(cell.Col - 7)} {isKing}";
                             await client.SendAsync(send);
                         }
                         _board.Cells[cell.Row, cell.Col] = _board.Cells[SelectedCell.Row, SelectedCell.Col];
                         
                         _board.Cells[SelectedCell.Row, SelectedCell.Col] = null;
+
+                        var cellfromCells = Cells[SelectedCell.Row*4 + SelectedCell.Col/2].Checker;
+                        var cellfromSelected = SelectedCell.Checker;
                         cell.Checker = SelectedCell.Checker;
                         cell.Checker.Fill = SelectedCell.Checker.Fill;
-                        if (cell.Row == 0 || cell.Row == 7)
-                            cell.Checker._checkerModel.IsKing = true;
+                        
+
                         SelectedCell.Checker = null;
                         SelectedCell = null;
+
                     }
                 }
             }
@@ -541,14 +554,15 @@ namespace Checkers
             int r2 = data[2];
             int c2 = data[3];
             bool IsKing = data[4] == 1 ? true : false;
-            _board.Cells[r2, c2] = _board.Cells[r1, c1];
 
+            _board.Cells[r2, c2] = _board.Cells[r1, c1];
             _board.Cells[r1, c1] = null;
+
             Cells[r2 * 4 + c2 / 2].Checker = Cells[r1 * 4 + c1 / 2].Checker;
             Cells[r2 * 4 + c2 / 2].Checker.Fill = Cells[r1 * 4 + c1 / 2].Checker.Fill;
 
             Cells[r1 * 4 + c1 / 2].Checker = null;
-            Cells[r1 * 4 + c1 / 2] = null;
+            //Cells[r1 * 4 + c1 / 2] = null;
         }
         
 
