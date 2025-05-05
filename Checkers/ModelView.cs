@@ -310,6 +310,8 @@ namespace Checkers
     // ViewModel доски
     class BoardViewModel : INotifyPropertyChanged
     {
+
+
         private Board _board; // Модель доски
         private double _cellSize; // Размер клетки
 
@@ -361,6 +363,9 @@ namespace Checkers
         // Конструктор
         public BoardViewModel(bool isNetwork = false)
         {
+
+
+
             IsNetWork = isNetwork;
             if (IsNetWork) 
                 _board = new Board(true);
@@ -395,10 +400,37 @@ namespace Checkers
                     }
                 }
             }
-        }   
+        }
+        // Очки игроков
+        private int _player1Score;
+        public int Player1Score
+        {
+            get => _player1Score;
+            set
+            {
+                if (_player1Score != value)
+                {
+                    _player1Score = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
 
+        private int _player2Score;
+        public int Player2Score
+        {
+            get => _player2Score;
+            set
+            {
+                if (_player2Score != value)
+                {
+                    _player2Score = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
 
-         // Обновление размера клеток при изменении окна
+        // Обновление размера клеток при изменении окна
         public void UpdateCellSize(double newSize)
         {
             foreach (var cell in Cells)

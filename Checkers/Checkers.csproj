@@ -8,4 +8,44 @@
     <UseWPF>true</UseWPF>
   </PropertyGroup>
 
+  <ItemGroup>
+    <None Remove="Assets\BlackCheckedField.png" />
+    <None Remove="Assets\BlackChecker.png" />
+    <None Remove="Assets\Field.png" />
+    <None Remove="Assets\KingBlackChecker.png" />
+    <None Remove="Assets\KingWhiteChecker.png" />
+    <None Remove="Assets\WhiteCheckedField.png" />
+    <None Remove="Assets\WhiteChecker.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Assets\KingBlackChecker.png">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Assets\Field.png">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Assets\BlackCheckedField.png">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Assets\BlackChecker.png">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Assets\KingWhiteChecker.png">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Assets\WhiteCheckedField.png">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Assets\WhiteChecker.png">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
+  </ItemGroup>
+
 </Project>
