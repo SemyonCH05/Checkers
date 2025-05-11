@@ -40,6 +40,12 @@ namespace Checkers
             double cellSize = Math.Min(grid.ActualWidth / 8, grid.ActualHeight / 8);
             _boardViewModel.UpdateCellSize(cellSize);
         }
+
+        private void CloseButton_Click(object sender, RoutedEventArgs e)
+        {
+            this.Close(); // Закрывает текущее окно
+        }
+
     }
 
 

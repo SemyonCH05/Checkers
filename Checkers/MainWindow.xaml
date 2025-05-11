@@ -29,7 +29,13 @@
 
                     <Button Content="Сетевая игра" Command="{Binding StartNetworkGameCommand}"
                          Background="#FEFEFE" Foreground="#252525" Padding="10" FontSize="14" Margin="0,20,0,0" Width="250" Height="40"/>
-                </StackPanel>
+                
+                    <Button Content="Настройки" Command="{Binding StartSettingsCommand}"
+                             Background="#FEFEFE" Foreground="#252525" Padding="10" FontSize="14" Margin="0,20,0,0" Width="250" Height="40"/>
+
+                    <Button Content="Выйти"  Click="CloseButton_Click" 
+                            Background="#FEFEFE" Foreground="#252525" Padding="10" FontSize="14" Margin="0,20,0,0" Width="250" Height="40"/>
+            </StackPanel>
             </Grid>
 
             <!-- ЭКРАН СЕТЕВОЙ ИГРЫ -->
@@ -46,7 +52,7 @@
             </StackPanel>
             </Grid>
 
-            <!-- ЭКРАН ИГРЫ -->
+        <!-- ЭКРАН ИГРЫ -->
             <Grid x:Name="GameScreen" Background="#EBECD0" Visibility="{Binding IsGameVisible}">
 
                 <!-- ПОЛЕ С ИГРОЙ -->

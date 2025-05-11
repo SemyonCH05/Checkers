@@ -168,10 +168,12 @@ namespace Checkers
         public ICommand StartGameCommandAlone {  get; }
         public ICommand BackToMenuCommand { get; }
         public ICommand StartNetworkGameCommand { get; } // Сетевая игра
+        public ICommand StartSettingsCommand { get; } // Настройки
 
         // Логика отображения экранов
         private bool _isGameScreenVisible;
         private bool _isNetworkGameScreenVisible;
+        private bool _isSettingsScreenVisible;
 
         // Флаг: обычная игра
         public bool IsGameScreenVisible
@@ -184,6 +186,7 @@ namespace Checkers
                 OnPropertyChanged(nameof(IsMenuVisible));
                 OnPropertyChanged(nameof(IsGameVisible));
                 OnPropertyChanged(nameof(IsNetworkGameVisible));
+                OnPropertyChanged(nameof(IsSettingsVisible));
             }
         }
 
@@ -198,6 +201,23 @@ namespace Checkers
                 OnPropertyChanged(nameof(IsMenuVisible));
                 OnPropertyChanged(nameof(IsGameVisible));
                 OnPropertyChanged(nameof(IsNetworkGameVisible));
+                OnPropertyChanged(nameof(IsSettingsVisible));
+            }
+        }
+
+        // Флаг: настройки
+
+        public bool IsSettingsScreenVisible
+        {
+            get => _isSettingsScreenVisible;
+            set
+            {
+                _isSettingsScreenVisible = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(IsMenuVisible));
+                OnPropertyChanged(nameof(IsGameVisible));
+                OnPropertyChanged(nameof(IsNetworkGameVisible));
+                OnPropertyChanged(nameof(IsSettingsVisible));
             }
         }
 
