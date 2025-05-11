@@ -37,13 +37,9 @@ namespace Checkers
             {
                 while (!ct.IsCancellationRequested)
                 {
-                    var message = await _reader.ReadLineAsync();  // ждём до '\n'
-                    if (message == null)   // если клиент закрыл соединение
+                    var message = await _reader.ReadLineAsync();  
+                    if (message == null || message == "END") 
                         break;
-
-                    // УБИРАЕМ любое условие типа `if (message == "END") break;`
-                    // пока не хотим разрывать связь по протоколу.
-
                     MessageReceived?.Invoke(message);
                 }
             }

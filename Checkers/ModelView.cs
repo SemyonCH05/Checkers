@@ -516,6 +516,7 @@ namespace Checkers
 
                         if (server != null)
                         {
+                            
                             int isKing = SelectedCell.Checker._checkerModel.IsKing ? 1 : 0;
                             string send = $"{Math.Abs(SelectedCell.Row - 7)} {Math.Abs(SelectedCell.Col - 7)} {Math.Abs(cell.Row - 7)} {Math.Abs(cell.Col - 7)} {isKing}";
                             await server.SendAsync(send);
@@ -529,7 +530,7 @@ namespace Checkers
                         }
 
                         
-
+                        var x = mypath.ToString();
                         _board.Cells[cell.Row, cell.Col] = _board.Cells[SelectedCell.Row, SelectedCell.Col];
                         
                         _board.Cells[SelectedCell.Row, SelectedCell.Col] = null;
