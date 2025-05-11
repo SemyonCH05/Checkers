@@ -7,102 +7,156 @@ using System.Net;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
+using System.Diagnostics;
+using System.IO;
 
 namespace Checkers
 {
 
-    class Server
+    class NetworkPeer
     {
-        TcpListener tcpListener;
+        NetworkStream _stream;
+        StreamReader _reader;
+        StreamWriter _writer;
+        CancellationTokenSource _cts = new CancellationTokenSource();
 
-        public Server()
+        public event Action<string> MessageReceived; // событие сообщение получено
+
+        public NetworkPeer(NetworkStream stream)
         {
-            tcpListener = new TcpListener(IPAddress.Any, 8888);
+            _stream = stream;
+            _reader = new StreamReader(stream, Encoding.UTF8);
+            _writer = new StreamWriter(stream, Encoding.UTF8) { AutoFlush = true };
+
+            _ = Task.Run(() => ListenLoop(_cts.Token));
         }
 
-        public string CreateServer()
-        {
-            tcpListener.Start();
-
-            var hostAddresses = Dns.GetHostAddresses(Dns.GetHostName());
-            var ipv4 = hostAddresses.FirstOrDefault(a => a.AddressFamily == AddressFamily.InterNetwork);
-
-            return $"Сервер запущен на {ipv4} -- {((IPEndPoint)tcpListener.LocalEndpoint).Port}";
-        }
-
-        public async void MessageServer()
+        private async Task ListenLoop(CancellationToken ct)
         {
             try
             {
-                
-                while (true)
+                while (!ct.IsCancellationRequested)
                 {
-                    using var tcpClient = await tcpListener.AcceptTcpClientAsync();
-                    var stream = tcpClient.GetStream();
-                    Console.WriteLine($"К серверу подключен клиент под {tcpClient.Client.RemoteEndPoint}");
-                    var response = new List<byte>();
-                    int bytesRead = 10;
-                    while (true)
-                    {
-                        Console.WriteLine("Чё хочешь отправить клиенту, пиши:");
-                        var send = Console.ReadLine();
-                        if (send != "")
-                        {
-                            await stream.WriteAsync(Encoding.UTF8.GetBytes(send + '\n'));
-                            response.Clear();
-                        }
-
-                        while ((bytesRead = stream.ReadByte()) != '\n')
-                            response.Add((byte)bytesRead);
-                        var word = UTF8Encoding.UTF8.GetString(response.ToArray());
-                        if (word == "END")
-                            break;
-
-                        Console.WriteLine($"пришло сообщение от клиента: {word}");
-                    }
+                    var message = await _reader.ReadLineAsync();  
+                    if (message == null || message == "END") 
+                        break;
+                    MessageReceived?.Invoke(message);
                 }
             }
-            finally
+            catch (Exception ex)
             {
-                tcpListener.Stop();
+                Debug.WriteLine("ListenLoop упал: " + ex);
             }
         }
+
+        public Task SendAsync(string message)
+        {
+            return _writer.WriteLineAsync(message);
+        }
+
+        public void Stop()
+        {
+            _cts.Cancel();
+            _stream.Close();
+        }
+    }
+
+
+    class Server
+    {
+        TcpListener tcpListener = new TcpListener(IPAddress.Any, 8888);
+        NetworkPeer? _peer;
+        
+
+        public event Action<int[]> OpponentMoved;
+
+        public async Task<string> CreateServer()
+        {
+            tcpListener.Start();
+            var endp = (IPEndPoint)tcpListener.LocalEndpoint;
+            var localIp = endp.Address;
+            var client = await tcpListener.AcceptTcpClientAsync();
+
+            _peer = new NetworkPeer(client.GetStream());
+            _peer.MessageReceived += OnMessage;
+            return $"Сервер запущен на {localIp}:{endp.Port}";
+        }
+
+        private void OnMessage(string mes)
+        {
+            var message = Decode(mes);
+            OpponentMoved?.Invoke(message);
+        }
+
+        public Task SendAsync(string message)
+        {
+            return _peer!.SendAsync(message);
+        }
+
+        public Task Stop()
+        {
+            _peer?.Stop();
+            tcpListener.Stop();
+            return Task.CompletedTask;
+        }
+
+        private int[] Decode(string send)
+        {
+            string[] words = send.Split(' ');
+            int[] result = new int[5];
+            for (int i = 0; i < words.Length; i++)
+            {
+                result[i] = int.Parse(words[i]);
+            }
+            return result;
+        }
+
+       
+
+        
     }
 
     class Client
     {
-        TcpClient tcpClient;
-        public Client()
+        TcpClient _tcpClient = new TcpClient();
+        NetworkPeer _peer;
+
+        public event Action<int[]> OpponentMoved;
+
+        public async Task Connect(string ip)
         {
-            tcpClient = new TcpClient();
+            await _tcpClient.ConnectAsync(ip, 8888);
+            _peer = new NetworkPeer(_tcpClient.GetStream());
+            _peer.MessageReceived += OnMessage;
         }
 
-        public async void CreateConnect()
+        private void OnMessage(string mes)
         {
-            await tcpClient.ConnectAsync("192.168.31.160", 8888); // Укажите IP-адрес и порт сервера  
+            var message = Decode(mes);
+            OpponentMoved?.Invoke(message);
+        }
 
-            Console.WriteLine("Подключение установлено");
-
-            var stream = tcpClient.GetStream();
-            var response = new List<byte>();
-            int bytesRead = 10;
-            while (true)
+        private int[] Decode(string send)
+        {
+            string[] words = send.Split(' ');
+            int[] result = new int[5];
+            for (int i = 0; i < words.Length; i++)
             {
-                while ((bytesRead = stream.ReadByte()) != '\n')
-                    response.Add((byte)bytesRead);
-                var word = UTF8Encoding.UTF8.GetString(response.ToArray());
-                if (word == "END")
-                    break;
-                response.Clear();
-                Console.WriteLine($"пришло сообщение от сервера: {word}");
-
-                Console.WriteLine("Че хочешь отправить на сервер, пиши:");
-                var myWord = Console.ReadLine();
-
-                if (myWord != "")
-                    await stream.WriteAsync(Encoding.UTF8.GetBytes(myWord + '\n'));
+                result[i] = int.Parse(words[i]);
             }
+            return result;
         }
+
+        public Task SendAsync(string mes)
+        {
+            return _peer.SendAsync(mes);
+        }
+
+        public void Disconnect()
+        {
+            _peer.Stop();
+        }
+
     }
     class Checker
     {
