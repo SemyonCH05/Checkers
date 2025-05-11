@@ -225,6 +225,7 @@ namespace Checkers
         public Visibility IsMenuVisible => (!IsGameScreenVisible && !IsNetworkGameScreenVisible) ? Visibility.Visible : Visibility.Collapsed;
         public Visibility IsGameVisible => (IsGameScreenVisible && !IsNetworkGameScreenVisible) ? Visibility.Visible : Visibility.Collapsed;
         public Visibility IsNetworkGameVisible => IsNetworkGameScreenVisible ? Visibility.Visible : Visibility.Collapsed;
+        public Visibility IsSettingsVisible => IsSettingsScreenVisible ? Visibility.Visible : Visibility.Collapsed;
 
         public ScreenViewModel()
         { 
@@ -246,10 +247,18 @@ namespace Checkers
             // Команда запуска сетевой игры
             StartNetworkGameCommand = new RelayCommand(_ => StartNetworkGame());
 
+            // Команда запуска настроек
+            StartSettingsCommand = new RelayCommand(_ => {
+                IsGameScreenVisible = false;
+                IsNetworkGameScreenVisible = false;
+                IsSettingsScreenVisible = true;
+            });
+
             // Возврат в меню
             BackToMenuCommand = new RelayCommand(_ => {
                 IsGameScreenVisible = false;
                 IsNetworkGameScreenVisible = false;
+                IsSettingsScreenVisible = false;
             });
         }
 
@@ -347,6 +356,8 @@ namespace Checkers
             }
         }
 
+
+        
 
         // Размер клетки (используется при ресайзе окна)
         public double CellSize
@@ -612,7 +623,7 @@ namespace Checkers
             _execute = execute ?? throw new ArgumentNullException(nameof(execute));
             _canExecute = canExecute;
         }
-
+            
         public bool CanExecute(object? parameter) => _canExecute?.Invoke(parameter) ?? true;
         public void Execute(object? parameter) => _execute(parameter);
         public event EventHandler? CanExecuteChanged

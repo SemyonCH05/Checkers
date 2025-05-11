@@ -60,4 +60,5 @@ namespace Checkers
             throw new NotImplementedException();
         }
     }
+
 }
