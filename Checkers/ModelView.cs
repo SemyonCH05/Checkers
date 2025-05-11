@@ -14,42 +14,6 @@ using System.Windows.Shapes;
 
 namespace Checkers
 {
-
-    public class MainViewModel : INotifyPropertyChanged
-    {
-
-        private bool _isGameScreenVisible;
-        public bool IsGameScreenVisible
-        {
-            get => _isGameScreenVisible;
-            set
-            {
-                _isGameScreenVisible = value;
-                OnPropertyChanged();
-                OnPropertyChanged(nameof(IsMenuVisible));
-                OnPropertyChanged(nameof(IsGameVisible));
-            }
-        }
-        public Visibility IsMenuVisible => IsGameScreenVisible ? Visibility.Collapsed : Visibility.Visible;
-        public Visibility IsGameVisible => IsGameScreenVisible ? Visibility.Visible : Visibility.Collapsed;
-
-        // Команды
-        public ICommand StartGameCommand { get; }
-        public ICommand BackToMenuCommand { get; }
-
-        public MainViewModel()
-        {
-            IsGameScreenVisible = false;
-            StartGameCommand = new RelayCommand(_ => IsGameScreenVisible = true);
-            BackToMenuCommand = new RelayCommand(_ => IsGameScreenVisible = false); // новая команда
-        }
-
-        public event PropertyChangedEventHandler? PropertyChanged;
-        private void OnPropertyChanged([System.Runtime.CompilerServices.CallerMemberName] string name = null)
-            => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
-
-
-    }
     class CheckerViewModel : INotifyPropertyChanged
     {
         public Checker _checkerModel;
@@ -185,9 +149,174 @@ namespace Checkers
 
     }
 
-    // ViewModel доски, объединённый с логикой переключения экранов меню/игры/сетевой игры
+    class ScreenViewModel : INotifyPropertyChanged
+    {
+        private BoardViewModel _boardViewModel;
+        public BoardViewModel BoardViewModel { 
+            get => _boardViewModel;
+            set
+            { 
+                _boardViewModel = value; 
+                OnPropertyChanged(nameof(BoardViewModel)); 
+            } 
+        } 
+
+        // Команды переключения экранов
+        public ICommand StartGameCommandCreate { get; }
+        public ICommand StartGameCommandConnect { get; }
+
+        public ICommand StartGameCommandAlone {  get; }
+        public ICommand BackToMenuCommand { get; }
+        public ICommand StartNetworkGameCommand { get; } // Сетевая игра
+        public ICommand StartSettingsCommand { get; } // Настройки
+
+        // Логика отображения экранов
+        private bool _isGameScreenVisible;
+        private bool _isNetworkGameScreenVisible;
+        private bool _isSettingsScreenVisible;
+
+        // Флаг: обычная игра
+        public bool IsGameScreenVisible
+        {
+            get => _isGameScreenVisible;
+            set
+            {
+                _isGameScreenVisible = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(IsMenuVisible));
+                OnPropertyChanged(nameof(IsGameVisible));
+                OnPropertyChanged(nameof(IsNetworkGameVisible));
+                OnPropertyChanged(nameof(IsSettingsVisible));
+            }
+        }
+
+        // Флаг: сетевая игра
+        public bool IsNetworkGameScreenVisible
+        {
+            get => _isNetworkGameScreenVisible;
+            set
+            {
+                _isNetworkGameScreenVisible = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(IsMenuVisible));
+                OnPropertyChanged(nameof(IsGameVisible));
+                OnPropertyChanged(nameof(IsNetworkGameVisible));
+                OnPropertyChanged(nameof(IsSettingsVisible));
+            }
+        }
+
+        // Флаг: настройки
+
+        public bool IsSettingsScreenVisible
+        {
+            get => _isSettingsScreenVisible;
+            set
+            {
+                _isSettingsScreenVisible = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(IsMenuVisible));
+                OnPropertyChanged(nameof(IsGameVisible));
+                OnPropertyChanged(nameof(IsNetworkGameVisible));
+                OnPropertyChanged(nameof(IsSettingsVisible));
+            }
+        }
+
+        // Видимость экранов (для биндинга в XAML)
+        public Visibility IsMenuVisible => (!IsGameScreenVisible && !IsNetworkGameScreenVisible) ? Visibility.Visible : Visibility.Collapsed;
+        public Visibility IsGameVisible => (IsGameScreenVisible && !IsNetworkGameScreenVisible) ? Visibility.Visible : Visibility.Collapsed;
+        public Visibility IsNetworkGameVisible => IsNetworkGameScreenVisible ? Visibility.Visible : Visibility.Collapsed;
+
+        public ScreenViewModel()
+        { 
+
+            // Начальное состояние — показываем меню
+            IsGameScreenVisible = false;
+            IsNetworkGameScreenVisible = false;
+
+            // Команда запуска одиночной игры
+
+            StartGameCommandAlone = new RelayCommand(_ => StartAloneGame());
+
+            // Команды для запуска сетевой игры взависимости от выбора кнопки
+
+            StartGameCommandCreate = new RelayCommand(_ => StartNetworkCreate());
+
+            StartGameCommandConnect = new RelayCommand(_ => StartNetworkConnect());
+
+            // Команда запуска сетевой игры
+            StartNetworkGameCommand = new RelayCommand(_ => StartNetworkGame());
+
+            // Возврат в меню
+            BackToMenuCommand = new RelayCommand(_ => {
+                IsGameScreenVisible = false;
+                IsNetworkGameScreenVisible = false;
+            });
+        }
+
+        public void StartAloneGame()
+        {
+            IsGameScreenVisible = true;
+            IsNetworkGameScreenVisible = false;
+            BoardViewModel = new BoardViewModel();
+        }
+
+        public void StartNetworkGame()
+        {
+            IsGameScreenVisible = false;
+            IsNetworkGameScreenVisible = true;
+        }
+
+        public async void StartNetworkCreate()
+        {
+            BoardViewModel = new BoardViewModel();
+            BoardViewModel.server = new Server();
+            BoardViewModel.server.OpponentMoved += move =>
+            {
+                Application.Current.Dispatcher.Invoke(() => BoardViewModel.OnOpponentMoved(move));
+            };
+            var info = await BoardViewModel.server.CreateServer();
+            MessageBox.Show(info);
+            IsGameScreenVisible = true;
+            IsNetworkGameScreenVisible = false;
+        }
+
+        public async void StartNetworkConnect()
+        {
+            ConnectServer IpWindow = new ConnectServer();
+
+            if (IpWindow.ShowDialog() == true)
+            {
+                MessageBox.Show($"Ip адрес получен: {IpWindow.IpAdress.ToString()}");
+            }
+
+            BoardViewModel = new BoardViewModel(true);
+
+            BoardViewModel.client = new Client();
+            BoardViewModel.client.OpponentMoved += move =>
+            {
+                Application.Current.Dispatcher.Invoke(() => BoardViewModel.OnOpponentMoved(move));
+            }; ;
+            await BoardViewModel.client.Connect(IpWindow.IpAdress);
+
+
+            IsGameScreenVisible = true;
+            IsNetworkGameScreenVisible = false;
+        }
+
+        public event PropertyChangedEventHandler? PropertyChanged;
+        protected void OnPropertyChanged([CallerMemberName] string name = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+        }
+    }
+
+    // ViewModel доски
     class BoardViewModel : INotifyPropertyChanged
     {
+        public Server? server;
+        public Client? client;
+
+
         private Board _board; // Модель доски
         private double _cellSize; // Размер клетки
 
@@ -199,10 +328,7 @@ namespace Checkers
         public ICommand CellClickCommand { get; }
         public CellViewModel _selectedCell;
 
-        // Команды переключения экранов
-        public ICommand StartGameCommand { get; }
-        public ICommand BackToMenuCommand { get; }
-        public ICommand StartNetworkGameCommand { get; } // Сетевая игра
+        
 
         // Выделенная клетка
         public CellViewModel SelectedCell
@@ -221,42 +347,6 @@ namespace Checkers
             }
         }
 
-        // Логика отображения экранов
-        private bool _isGameScreenVisible;
-        private bool _isNetworkGameScreenVisible;
-
-        // Флаг: обычная игра
-        public bool IsGameScreenVisible
-        {
-            get => _isGameScreenVisible;
-            set
-            {
-                _isGameScreenVisible = value;
-                OnPropertyChanged();
-                OnPropertyChanged(nameof(IsMenuVisible));
-                OnPropertyChanged(nameof(IsGameVisible));
-                OnPropertyChanged(nameof(IsNetworkGameVisible));
-            }
-        }
-
-        // Флаг: сетевая игра
-        public bool IsNetworkGameScreenVisible
-        {
-            get => _isNetworkGameScreenVisible;
-            set
-            {
-                _isNetworkGameScreenVisible = value;
-                OnPropertyChanged();
-                OnPropertyChanged(nameof(IsMenuVisible));
-                OnPropertyChanged(nameof(IsGameVisible));
-                OnPropertyChanged(nameof(IsNetworkGameVisible));
-            }
-        }
-
-        // Видимость экранов (для биндинга в XAML)
-        public Visibility IsMenuVisible => (!IsGameScreenVisible && !IsNetworkGameScreenVisible) ? Visibility.Visible : Visibility.Collapsed;
-        public Visibility IsGameVisible => (IsGameScreenVisible && !IsNetworkGameScreenVisible) ? Visibility.Visible : Visibility.Collapsed;
-        public Visibility IsNetworkGameVisible => IsNetworkGameScreenVisible ? Visibility.Visible : Visibility.Collapsed;
 
         // Размер клетки (используется при ресайзе окна)
         public double CellSize
@@ -272,33 +362,23 @@ namespace Checkers
             }
         }
 
-        // Конструктор
-        public BoardViewModel()
+        // Сетевая или нет игра
+        bool IsNetWork;
+
+        public void OnOpponentMoved(int[] data)
         {
-            _board = new Board();
+            UpdateBoard(data);
+        }
+
+        // Конструктор
+        public BoardViewModel(bool isNetwork = false)
+        {
+            IsNetWork = isNetwork;
+            if (IsNetWork) 
+                _board = new Board(true);
+            else
+                _board = new Board();
             CellSize = 60;
-
-            // Начальное состояние — показываем меню
-            IsGameScreenVisible = false;
-            IsNetworkGameScreenVisible = false;
-
-            // Команда запуска одиночной игры
-            StartGameCommand = new RelayCommand(_ => {
-                IsGameScreenVisible = true;
-                IsNetworkGameScreenVisible = false;
-            });
-
-            // Команда запуска сетевой игры
-            StartNetworkGameCommand = new RelayCommand(_ => {
-                IsGameScreenVisible = false;
-                IsNetworkGameScreenVisible = true;
-            });
-
-            // Возврат в меню
-            BackToMenuCommand = new RelayCommand(_ => {
-                IsGameScreenVisible = false;
-                IsNetworkGameScreenVisible = false;
-            });
 
             // Обработка клика по клетке
             CellClickCommand = new RelayCommand(param => Move((CellViewModel)param));
@@ -318,7 +398,6 @@ namespace Checkers
                         };
 
                         var checker = _board.Cells[i, j]; // Получаем шашку из модели
-                        //var col = checker.IsWhite;
                         if (checker != null)
                         {
                             cell.Checker = new CheckerViewModel(checker);
@@ -329,6 +408,8 @@ namespace Checkers
                 }
             }
         }   
+
+
          // Обновление размера клеток при изменении окна
         public void UpdateCellSize(double newSize)
         {
@@ -340,7 +421,7 @@ namespace Checkers
         }
  
          // Обработка нажатия на клетку
-        private void Move(CellViewModel cell)
+        private async void Move(CellViewModel cell)
         {
             List<List<(int, int)>> paths = new List<List<(int, int)>>();
 
@@ -451,18 +532,63 @@ namespace Checkers
                     // сам ход 
                     if (cell.Row == mypath[mypath.Count - 1].Item1 && cell.Col == mypath[mypath.Count - 1].Item2 || SelectedCell.Checker._checkerModel.IsKing)
                     {
+                        
+
+                        if (server != null)
+                        {
+                            
+                            int isKing = SelectedCell.Checker._checkerModel.IsKing ? 1 : 0;
+                            string send = $"{Math.Abs(SelectedCell.Row - 7)} {Math.Abs(SelectedCell.Col - 7)} {Math.Abs(cell.Row - 7)} {Math.Abs(cell.Col - 7)} {isKing}";
+                            await server.SendAsync(send);
+                        }
+
+                        else if (client != null)
+                        {
+                            int isKing = SelectedCell.Checker._checkerModel.IsKing ? 1 : 0;
+                            string send = $"{Math.Abs(SelectedCell.Row - 7)} {Math.Abs(SelectedCell.Col - 7)} {Math.Abs(cell.Row - 7)} {Math.Abs(cell.Col - 7)} {isKing}";
+                            await client.SendAsync(send);
+                        }
+
+                        
+                        var x = mypath.ToString();
                         _board.Cells[cell.Row, cell.Col] = _board.Cells[SelectedCell.Row, SelectedCell.Col];
+                        
                         _board.Cells[SelectedCell.Row, SelectedCell.Col] = null;
+
+                        var cellfromCells = Cells[SelectedCell.Row*4 + SelectedCell.Col/2].Checker;
+                        var cellfromSelected = SelectedCell.Checker;
                         cell.Checker = SelectedCell.Checker;
                         cell.Checker.Fill = SelectedCell.Checker.Fill;
+
                         if (cell.Row == 0 || cell.Row == 7)
                             cell.Checker._checkerModel.IsKing = true;
+
                         SelectedCell.Checker = null;
                         SelectedCell = null;
+
                     }
                 }
             }
 
+        }
+
+        public void UpdateBoard(int[] data)
+        {
+            // ДОБАВИТЬ МЕТОД У РИНАТА
+            int r1 = data[0];
+            int c1 = data[1];
+            int r2 = data[2];
+            int c2 = data[3];
+            bool IsKing = data[4] == 1 ? true : false;
+
+            _board.Cells[r2, c2] = _board.Cells[r1, c1];
+            _board.Cells[r1, c1] = null;
+
+            Cells[r2 * 4 + c2 / 2].Checker = Cells[r1 * 4 + c1 / 2].Checker;
+            Cells[r2 * 4 + c2 / 2].Checker.Fill = Cells[r1 * 4 + c1 / 2].Checker.Fill;
+
+            Cells[r1 * 4 + c1 / 2].Checker = null;
+            //Cells[r1 * 4 + c1 / 2] = null;
         }
         
 
