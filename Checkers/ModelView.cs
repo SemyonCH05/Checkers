@@ -379,6 +379,9 @@ namespace Checkers
             UpdateBoard(data);
         }
 
+        //Чья очередь ходить
+        bool IsWhiteTurn = true;
+
         // Конструктор
         public BoardViewModel(bool isNetwork = false)
         {
@@ -514,10 +517,33 @@ namespace Checkers
             }
         }
 
+
         // Обработка нажатия на клетку
         private async void Move(CellViewModel cell)
         {
+            
+            ResetCellBackgrounds();
+
             List<List<(int, int)>> paths = new List<List<(int, int)>>();
+
+            // Обработка очередности ходов белые-чёрные
+            if (cell.Checker != null && cell.Checker._checkerModel.IsWhite != IsWhiteTurn)
+            {
+                return;
+            }
+
+            var forcedChecker = _board.HasForcedChecker(IsWhiteTurn);
+
+            if (forcedChecker.Count > 0 && SelectedCell == null)
+            {
+                if (cell.Checker == null || !forcedChecker.Contains((cell.Row, cell.Col)))
+                {
+
+                    foreach (var c in Cells)
+                        c.Background = new SolidColorBrush(Color.FromRgb(119, 149, 86));
+                    return;
+                }
+            }
 
             if (cell.Checker != null)
             {
@@ -560,6 +586,10 @@ namespace Checkers
             }
             if (SelectedCell != null && SelectedCell.Checker != null && cell.Checker != null)
             {
+                if (forcedChecker.Count > 0) {
+                    return;
+                }
+
                 SelectedCell = cell;
                 return;
             }
@@ -596,9 +626,17 @@ namespace Checkers
                 if (canMove)
                 {
                     ReplaceChecker(cell, mypath);
+                    IsWhiteTurn = !IsWhiteTurn;
                 }
             }
 
+        }
+
+        // Сброс фона
+        private void ResetCellBackgrounds()
+        {
+            foreach (var c in Cells)
+                c.Background = new SolidColorBrush(Color.FromRgb(119, 149, 86));
         }
 
 
