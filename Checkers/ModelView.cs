@@ -285,6 +285,7 @@ namespace Checkers
                 Application.Current.Dispatcher.Invoke(() => BoardViewModel.OnOpponentMoved(move));
             };
             var info = await BoardViewModel.server.CreateServer();
+            
             MessageBox.Show(info);
             IsGameScreenVisible = true;
             IsNetworkGameScreenVisible = false;
@@ -387,7 +388,7 @@ namespace Checkers
                 _board = new Board(true);
             else
                 _board = new Board();
-            CellSize = 60;
+            CellSize = 60;  
 
             // Обработка клика по клетке
             CellClickCommand = new RelayCommand(param => Move((CellViewModel)param));
@@ -429,15 +430,17 @@ namespace Checkers
 
         }
 
-        private async void ReplaceChecker(CellViewModel cell, List<(int Row, int Col)> mypath)
+        private async void ReplaceChecker(List<(int Row, int Col)> mypath, CellViewModel? cell)
         {
-            if (cell == null)
-                return;
-            if (SelectedCell == null)
-                return;
+            //if (cell == null)
+            //    return;
+            //if (SelectedCell == null)
+            //    return;
+
             int row = SelectedCell.Row;
             int col = SelectedCell.Col;
             mypath.RemoveAt(0);
+
             foreach (var (i, j) in mypath)
             {
                 if (SelectedCell.Checker._checkerModel.IsKing)
@@ -477,20 +480,22 @@ namespace Checkers
             // сам ход 
             if (cell.Row == mypath[mypath.Count - 1].Item1 && cell.Col == mypath[mypath.Count - 1].Item2 || SelectedCell.Checker._checkerModel.IsKing)
             {
-                if (server != null)
+                string send = "";
+                if (client != null || server != null)
                 {
-
                     int isKing = SelectedCell.Checker._checkerModel.IsKing ? 1 : 0;
-                    string send = $"{Math.Abs(SelectedCell.Row - 7)} {Math.Abs(SelectedCell.Col - 7)} {Math.Abs(cell.Row - 7)} {Math.Abs(cell.Col - 7)} {isKing}";
-                    await server.SendAsync(send);
+                    send += $"{Math.Abs(SelectedCell.Row - 7)} {Math.Abs(SelectedCell.Col - 7)} ";
+                    foreach (var (i,j) in mypath)
+                    {
+                        send += $"{Math.Abs(i - 7)} {Math.Abs(j - 7)} ";
+                    }
+                    send += $"{isKing}";
                 }
+                if (server != null)
+                    await server.SendAsync(send);
 
                 else if (client != null)
-                {
-                    int isKing = SelectedCell.Checker._checkerModel.IsKing ? 1 : 0;
-                    string send = $"{Math.Abs(SelectedCell.Row - 7)} {Math.Abs(SelectedCell.Col - 7)} {Math.Abs(cell.Row - 7)} {Math.Abs(cell.Col - 7)} {isKing}";
                     await client.SendAsync(send);
-                }
 
 
                 if (cell.Row != SelectedCell.Row || cell.Col != SelectedCell.Col)
@@ -521,6 +526,10 @@ namespace Checkers
 
             if (cell.Checker != null)
             {
+                if (cell.Checker._checkerModel.IsWhite && client != null)
+                    return;
+                if (!cell.Checker._checkerModel.IsWhite && server != null)
+                    return;
                 if (SelectedCell != null)
                 {
                     var oldpath = _board.GetPath(SelectedCell.Row, SelectedCell.Col);
@@ -528,7 +537,7 @@ namespace Checkers
                     {
                         if (path[path.Count - 1].Row == cell.Row && path[path.Count - 1].Col == cell.Col)
                         {
-                            ReplaceChecker(cell, path);
+                            ReplaceChecker(path, cell);
                             foreach (var p in oldpath)
                             {
                                 foreach (var (i, j) in p)
@@ -571,8 +580,9 @@ namespace Checkers
                     SelectedCell = cell;
                     return;
                 }
-
+                
                 var oldpaths = _board.GetPath(SelectedCell.Row, SelectedCell.Col);
+
                 foreach (var path in oldpaths)
                 {
                     foreach (var (i, j) in path)
@@ -596,7 +606,7 @@ namespace Checkers
                 }
                 if (canMove)
                 {
-                    ReplaceChecker(cell, mypath);
+                    ReplaceChecker(mypath, cell);
                 }
             }
 
@@ -605,21 +615,82 @@ namespace Checkers
 
         public void UpdateBoard(int[] data)
         {
-            // ДОБАВИТЬ МЕТОД У РИНАТА
-            int r1 = data[0];
-            int c1 = data[1];
-            int r2 = data[2];
-            int c2 = data[3];
-            bool IsKing = data[4] == 1 ? true : false;
+            bool IsKing = data[data.Length-1] == 1 ? true : false;
+            List<(int, int)> steps = new List<(int, int)>();
+            for (int i = 0; i < data.Length-1; i+=2)
+            {
+                steps.Add((data[i], data[i+1]));
+            }
+            CellViewModel cell = Cells[steps[steps.Count-1].Item1 * 4 + steps[steps.Count - 1].Item2 / 2];
+            CellViewModel selectedCell = Cells[steps[0].Item1 * 4 + steps[0].Item2 / 2];
+            int row = selectedCell.Row;
+            int col = selectedCell.Col;
+            steps.RemoveAt(0);
+            foreach (var (i, j) in steps)
+            {
+                if (selectedCell.Checker._checkerModel.IsKing)
+                {
+                    var x = i - row > 0 ? 1 : -1;
+                    var y = j - col > 0 ? 1 : -1;
+                    int p = 1;
+                    var r = row + x * p;
+                    var c = col + y * p;
 
-            _board.Cells[r2, c2] = _board.Cells[r1, c1];
-            _board.Cells[r1, c1] = null;
+                    while (InBoard(r, c) && _board.Cells[r, c] == null && r != cell.Row && c != cell.Col)
+                    {
+                        p++;
+                        r = row + x * p;
+                        c = col + y * p;
+                    }
+                    if (cell.Row != r || cell.Col != c)
+                    {
+                        _board.Cells[r, c] = null;
+                        Cells[(r) * 4 + (c) / 2].Checker = null;
+                        row = i;
+                        col = j;
+                    }
+                }
+                else if ((Math.Abs(row - i) == 2 || Math.Abs(col - j) == 2) && cell.Row == steps[steps.Count - 1].Item1 && cell.Col == steps[steps.Count - 1].Item2)
+                {
+                    var x = i - row > 0 ? i - 1 : i + 1;
+                    var y = j - col > 0 ? j - 1 : j + 1;
 
-            Cells[r2 * 4 + c2 / 2].Checker = Cells[r1 * 4 + c1 / 2].Checker;
-            Cells[r2 * 4 + c2 / 2].Checker.Fill = Cells[r1 * 4 + c1 / 2].Checker.Fill;
+                    _board.Cells[x, y] = null;
+                    Cells[x * 4 + y / 2].Checker = null;
+                    row = i;
+                    col = j;
 
-            Cells[r1 * 4 + c1 / 2].Checker = null;
-            //Cells[r1 * 4 + c1 / 2] = null;
+                }
+            }
+            // сам ход 
+            if (cell.Row == steps[steps.Count - 1].Item1 && cell.Col == steps[steps.Count - 1].Item2 || selectedCell.Checker._checkerModel.IsKing)
+            {
+                
+                if (cell.Row != selectedCell.Row || cell.Col != selectedCell.Col)
+                {
+                    _board.Cells[cell.Row, cell.Col] = _board.Cells[selectedCell.Row, selectedCell.Col];
+
+                    _board.Cells[selectedCell.Row, selectedCell.Col] = null;
+
+                    Cells[cell.Row * 4 + cell.Col / 2].Checker = Cells[selectedCell.Row * 4 + selectedCell.Col / 2].Checker;
+                    Cells[cell.Row * 4 + cell.Col / 2].Checker.Fill = Cells[selectedCell.Row * 4 + selectedCell.Col / 2].Checker.Fill;
+
+                    Cells[selectedCell.Row * 4 + selectedCell.Col / 2].Checker = null;
+                    //cell.Checker = selectedCell.Checker;
+                    //cell.Checker.Fill = selectedCell.Checker.Fill;
+                }
+                if (cell.Row == 0 || cell.Row == 7)
+                    cell.Checker._checkerModel.IsKing = true;
+            }
+
+
+            //_board.Cells[r2, c2] = _board.Cells[r1, c1];
+            //_board.Cells[r1, c1] = null;
+
+            //Cells[r2 * 4 + c2 / 2].Checker = Cells[r1 * 4 + c1 / 2].Checker;
+            //Cells[r2 * 4 + c2 / 2].Checker.Fill = Cells[r1 * 4 + c1 / 2].Checker.Fill;
+
+            //Cells[r1 * 4 + c1 / 2].Checker = null;
         }
 
         private bool InBoard(int row, int col)

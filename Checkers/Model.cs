@@ -103,7 +103,7 @@ namespace Checkers
         private int[] Decode(string send)
         {
             string[] words = send.Split(' ');
-            int[] result = new int[5];
+            int[] result = new int[words.Length];
             for (int i = 0; i < words.Length; i++)
             {
                 result[i] = int.Parse(words[i]);
@@ -139,7 +139,7 @@ namespace Checkers
         private int[] Decode(string send)
         {
             string[] words = send.Split(' ');
-            int[] result = new int[5];
+            int[] result = new int[words.Length];
             for (int i = 0; i < words.Length; i++)
             {
                 result[i] = int.Parse(words[i]);
@@ -187,18 +187,18 @@ namespace Checkers
     {
         public Checker?[,] Cells { get; } = new Checker[8, 8];
 
-        public bool IsNetwork;
+        public bool Isclient;
 
-        public Board(bool isNetwork = false)
+        public Board(bool isClient = false)
         {
-            IsNetwork = isNetwork;
+            Isclient = isClient;
             for (int i = 0; i < 8; i++)
             {
                 for (int j = 0; j < 8; j++)
                 {
                     if ((i + j) % 2 != 0)
                     {
-                        if (!IsNetwork)
+                        if (!isClient)
                         {
                             if (i < 3)
                                 Cells[i, j] = new Checker(false, false, i, j); // чёрные
@@ -255,7 +255,10 @@ namespace Checkers
 
         private void AddSimpleMoves((int Row, int Col) origin, List<List<(int, int)>> result, bool isWhite)
         {
+            
             int dir = isWhite ? -1 : 1;
+            if (Isclient)
+                dir = -1;
             var deltas = new[] { (dir, -1), (dir, 1) };
             foreach (var (dr, dc) in deltas)
             {
