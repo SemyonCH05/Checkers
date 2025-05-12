@@ -571,7 +571,6 @@ namespace Checkers
                     SelectedCell = cell;
                     return;
                 }
-
                 var oldpaths = _board.GetPath(SelectedCell.Row, SelectedCell.Col);
                 foreach (var path in oldpaths)
                 {
