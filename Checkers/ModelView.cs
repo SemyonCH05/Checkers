@@ -323,6 +323,33 @@ namespace Checkers
     // ViewModel доски
     class BoardViewModel : INotifyPropertyChanged
     {
+        private int _player1Score;
+        public int Player1Score
+        {
+            get => _player1Score;
+            set
+            {
+                if (_player1Score != value)
+                {
+                    _player1Score = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        private int _player2Score;
+        public int Player2Score
+        {
+            get => _player2Score;
+            set
+            {
+                if (_player2Score != value)
+                {
+                    _player2Score = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
         public Server? server;
         public Client? client;
 

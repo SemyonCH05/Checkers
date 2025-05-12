@@ -164,23 +164,24 @@ namespace Checkers
         public bool IsWhite { get; set; }
 
         public int FromX { get; set; }
-
-
         public int FromY { get; set; }
 
         public int ToX { get; set; } // нужно для сервера
-
         public int ToY { get; set; } // нужно для сервера
+
+        // Путь к изображению шашки
+        public string ImagePath { get; set; }
 
         public Checker(bool isWhite, bool isKing, int curX, int curY)
         {
-            IsKing = isKing;
             IsWhite = isWhite;
+            IsKing = isKing;
             FromX = curX;
             FromY = curY;
-        }
 
-       
+            // Устанавливаем путь к изображению в зависимости от цвета шашки
+            ImagePath = isWhite ? "Assets/white_checker.png" : "Assets/black_checker.png";
+        }
     }
 
     class Board
