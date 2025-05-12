@@ -367,8 +367,10 @@ namespace Checkers
                     {
                         var paths = GetPath(row, col);
 
-                        bool hasCapture =
-                        paths.Any(path => path.Count > 2 || (path.Count == 2 && Math.Abs(path[1].Row - path[0].Row) > 1));
+                        bool hasCapture = paths.Any(path =>
+                        path.Count >= 2 &&
+                        Enumerable.Range(1, path.Count - 1).Any(i =>
+                        Math.Abs(path[i].Row - path[i - 1].Row) > 1));
 
                         if (hasCapture)
                             forced.Add((row, col));
