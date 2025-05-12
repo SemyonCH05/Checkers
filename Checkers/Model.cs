@@ -352,5 +352,38 @@ namespace Checkers
 
         private bool InBoard(int row, int col)
             => row >= 0 && row < 8 && col >= 0 && col < 8;
+
+        //Поиск шашки, которая должна бить
+        public List<(int row, int col)>HasForcedChecker(bool IsWhiteTurn)
+        {
+            var forced = new List<(int row, int col)>();
+
+            for (int row = 0; row < 8; row++) {
+                for (int col = 0; col < 8; col++)
+                {
+                    var checker = Cells[row, col];
+
+                    if (checker != null && checker.IsWhite == IsWhiteTurn)
+                    {
+                        var paths = GetPath(row, col);
+
+                        bool hasCapture = paths.Any(path =>
+                        path.Count >= 2 &&
+                        Enumerable.Range(1, path.Count - 1).Any(i =>
+                        Math.Abs(path[i].Row - path[i - 1].Row) > 1));
+
+                        if (hasCapture)
+                            forced.Add((row, col));
+                    }
+
+                }
+                
+
+            }
+            return forced;
+
+        }
+
+
     }
 }
