@@ -534,16 +534,67 @@ namespace Checkers
 
             var forcedChecker = _board.HasForcedChecker(IsWhiteTurn);
 
-            if (forcedChecker.Count > 0 && SelectedCell == null)
+            if (forcedChecker.Count > 0)
             {
-                if (cell.Checker == null || !forcedChecker.Contains((cell.Row, cell.Col)))
+                if (SelectedCell != null)
                 {
+                    var pathsFromSelected = _board.GetPath(SelectedCell.Row, SelectedCell.Col);
+                    foreach (var path in pathsFromSelected)
+                    {
+                        if (path[^1].Item1 == cell.Row && path[^1].Item2 == cell.Col)
+                        {
+                            ReplaceChecker(cell, path);
+                            ResetCellBackgrounds();
+                            SelectedCell = null;
 
-                    foreach (var c in Cells)
-                        c.Background = new SolidColorBrush(Color.FromRgb(119, 149, 86));
+                            var newForced = _board.HasForcedChecker(IsWhiteTurn);
+                            if (newForced.Count > 0)
+                            {
+                                return;
+                            }
+
+                            IsWhiteTurn = !IsWhiteTurn;
+                            return;
+                        }
+                    }
+                }
+
+                if (cell.Checker == null)
+                    return;
+
+                var isForced = forcedChecker.Any(fc => fc.Item1 == cell.Row && fc.Item2 == cell.Col);
+                if (!isForced)
+                {
+                    ResetCellBackgrounds();
                     return;
                 }
+
+                var thisPaths = _board.GetPath(cell.Row, cell.Col);
+                if (thisPaths.All(p => p.Count <= 1))
+                {
+                    ResetCellBackgrounds();
+                    return;
+                }
+
+                SelectedCell = cell;
+                ResetCellBackgrounds();
+
+                foreach (var path in thisPaths)
+                {
+                    foreach (var (i, j) in path)
+                    {
+                        if ((cell.Row != i || cell.Col != j) && !cell.Checker._checkerModel.IsKing)
+                            Cells[i * 4 + j / 2].Background = new SolidColorBrush(Color.FromRgb(0, 200, 0));
+                        else if (cell.Checker._checkerModel.IsKing && (cell.Row != i || cell.Col != j))
+                            Cells[i * 4 + j / 2].Background = new SolidColorBrush(Color.FromRgb(128, 128, 128));
+                    }
+
+                    Cells[path[^1].Item1 * 4 + path[^1].Item2 / 2].Background = new SolidColorBrush(Color.FromRgb(128, 128, 128));
+                }
+
+                return;
             }
+
 
             if (cell.Checker != null)
             {
