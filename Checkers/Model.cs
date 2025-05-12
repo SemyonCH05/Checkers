@@ -208,9 +208,9 @@ namespace Checkers
                         else
                         {
                             if (i < 3)
-                                Cells[i, j] = new Checker(true, false, i, j); // чёрные
+                                Cells[i, j] = new Checker(true, false, i, j); // белые
                             else if (i > 4)
-                                Cells[i, j] = new Checker(false, false, i, j);  // белые
+                                Cells[i, j] = new Checker(false, false, i, j);  // черные
                         }
 
                     }
@@ -219,174 +219,138 @@ namespace Checkers
 
         }
 
-        public List<List<(int,int)>> GetPath(int startRow, int startCol)
+        public List<List<(int Row, int Col)>> GetPath(int startRow, int startCol)
         {
-            List<List<(int, int)>> paths = new List<List<(int, int)>>();
-            List<(int, int)> initialPath = new List<(int, int)> { (startRow, startCol) };
-            if (Cells[startRow, startCol].IsKing)
+            var result = new List<List<(int, int)>>();
+            if (!InBoard(startRow, startCol) || Cells[startRow, startCol] == null)
+                return result;
+
+            var piece = Cells[startRow, startCol]!;
+            var origin = (Row: startRow, Col: startCol);
+
+            if (piece.IsKing)
             {
-                return GetPathQuenn(startRow, startCol);
+                var backup = Cells[origin.Row, origin.Col];
+                Cells[origin.Row, origin.Col] = null;
+                FindQueenPaths(origin, new List<(int, int)> { origin }, new HashSet<(int, int)>(), result, piece.IsWhite);
+                Cells[origin.Row, origin.Col] = backup;
+
+                if (result.Count == 0)
+                    AddQueenSimpleMoves(origin, result);
             }
-            DFS(startRow, startCol, initialPath, paths); // поиск прыжков
-
-            if (paths.Count == 0)
+            else
             {
-                if (!IsNetwork)
-                {
-                    if (startRow + 1 < 8 && startCol - 1 >= 0 && Cells[startRow + 1, startCol - 1] == null && !Cells[startRow, startCol].IsWhite)
-                        paths.Add(new List<(int, int)> { (startRow, startCol), (startRow + 1, startCol - 1) });
-                    if (startRow + 1 < 8 && startCol + 1 < 8 && Cells[startRow + 1, startCol + 1] == null && !Cells[startRow, startCol].IsWhite)
-                        paths.Add(new List<(int, int)> { (startRow, startCol), (startRow + 1, startCol + 1) });
-                    if (startRow - 1 >= 0 && startCol - 1 >= 0 && Cells[startRow - 1, startCol - 1] == null && Cells[startRow, startCol].IsWhite)
-                        paths.Add(new List<(int, int)> { (startRow, startCol), (startRow - 1, startCol - 1) });
-                    if (startRow - 1 >= 0 && startCol + 1 < 8 && Cells[startRow - 1, startCol + 1] == null && Cells[startRow, startCol].IsWhite)
-                        paths.Add(new List<(int, int)> { (startRow, startCol), (startRow - 1, startCol + 1) });
-                }
-                else
-                {
-                    if (startRow + 1 < 8 && startCol - 1 >= 0 && Cells[startRow + 1, startCol - 1] == null && Cells[startRow, startCol].IsWhite)
-                        paths.Add(new List<(int, int)> { (startRow, startCol), (startRow + 1, startCol - 1) });
-                    if (startRow + 1 < 8 && startCol + 1 < 8 && Cells[startRow + 1, startCol + 1] == null && Cells[startRow, startCol].IsWhite)
-                        paths.Add(new List<(int, int)> { (startRow, startCol), (startRow + 1, startCol + 1) });
-                    if (startRow - 1 >= 0 && startCol - 1 >= 0 && Cells[startRow - 1, startCol - 1] == null && !Cells[startRow, startCol].IsWhite)
-                        paths.Add(new List<(int, int)> { (startRow, startCol), (startRow - 1, startCol - 1) });
-                    if (startRow - 1 >= 0 && startCol + 1 < 8 && Cells[startRow - 1, startCol + 1] == null && !Cells[startRow, startCol].IsWhite)
-                        paths.Add(new List<(int, int)> { (startRow, startCol), (startRow - 1, startCol + 1) });
-                }
-            } 
+                var backup = Cells[origin.Row, origin.Col];
+                Cells[origin.Row, origin.Col] = null;
+                FindPaths(origin, new List<(int, int)> { origin }, result, piece.IsWhite);
+                Cells[origin.Row, origin.Col] = backup;
 
-            return paths;
+                if (result.Count == 0)
+                    AddSimpleMoves(origin, result, piece.IsWhite);
+            }
+
+            return result;
         }
 
-        private void DFS(int row, int col, List<(int, int)> path, List<List<(int, int)>> result)
+
+        private void AddSimpleMoves((int Row, int Col) origin, List<List<(int, int)>> result, bool isWhite)
         {
-            bool foundJump = false;
-            List<(int, int)> jumpingCells = new List<(int, int)>
+            int dir = isWhite ? -1 : 1;
+            var deltas = new[] { (dir, -1), (dir, 1) };
+            foreach (var (dr, dc) in deltas)
             {
-                (row+2, col-2),
-                (row +2, col+2),
-                (row -2, col-2),
-                (row -2, col+2),    
-            };
-
-            foreach (var (i,j) in jumpingCells)
-            {
-                if (i < 8 && i >= 0 && j < 8 && j >= 0 && Cells[i, j] == null)
-                {
-                    var x = i - row > 0 ? i - 1 : i + 1;
-                    var y = j - col > 0 ? j - 1 : j + 1;
-                    if (Cells[x, y] != null && Cells[x,y].IsWhite != Cells[path[0].Item1, path[0].Item2].IsWhite && !path.Contains((i,j))) { 
-                        foundJump = true;
-                        var newPath = new List<(int, int)>(path)
-                        {
-                            (i, j)
-                        };
-                        DFS(i, j, newPath, result);
-                    }
-                }
-            }
-
-            if (!foundJump && path.Count > 1)
-            {
-                result.Add(path);
+                var nr = origin.Row + dr;
+                var nc = origin.Col + dc;
+                if (InBoard(nr, nc) && Cells[nr, nc] == null)
+                    result.Add(new List<(int, int)> { origin, (nr, nc) });
             }
         }
 
-        private List<List<(int, int)>> GetPathQuenn(int startRow, int startCol)
+        private void AddQueenSimpleMoves((int Row, int Col) origin, List<List<(int, int)>> result)
         {
-            List<List<(int, int)>> paths = new List<List<(int, int)>>();
-            List<(int, int)> initialPath = new List<(int, int)> { (startRow, startCol) };
-            DFSQuenn(startRow, startCol, initialPath, paths);
-            if (paths.Count == 0)
-            {
-                initialPath.Clear();
-                int r = 0;
-                int c = 0;
-                while (startRow + 1 + r < 8 && startCol - 1 - c >= 0 && Cells[startRow + 1 + r, startCol - 1 - c] == null)
-                {
-                    initialPath.Add((startRow+1+r, startCol-1-c));
-                    r++;
-                    c++;
-                }
-                if (initialPath.Count != 0) 
-                    paths.Add(initialPath);
-                initialPath = new List<(int, int)>();
-                r = 0; c = 0;
-                while (startRow + 1 + r < 8 && startCol + 1 + c < 8 && Cells[startRow + 1 + r, startCol + 1 + c] == null)
-                {
-                    initialPath.Add((startRow+1+r, startCol+1+c));
-                    r++;
-                    c++;
-                }
-                if (initialPath.Count != 0)
-                    paths.Add(initialPath);
-                initialPath = new List<(int, int)>();
-                r = 0; c = 0;
-                while (startRow - 1 - r >= 0 && startCol - 1 - c>= 0 && Cells[startRow - 1 -r, startCol - 1 - c] == null)
-                {
-                    initialPath.Add((startRow - 1 - r, startCol - 1 - c));
-                    r++;
-                    c++;
-                }
-                if (initialPath.Count != 0)
-                    paths.Add(initialPath);
-                initialPath = new List<(int, int)>();
-                r = 0; c = 0;
-                while (startRow - 1 - r >= 0 && startCol + 1 + c < 8 && Cells[startRow - 1 - r, startCol + 1 + c] == null)
-                {
-                    initialPath.Add((startRow - 1 - r, startCol + 1 + c));
-                    r++;
-                    c++;
-                }
-                if (initialPath.Count != 0)
-                    paths.Add(initialPath);
-                initialPath = new List<(int, int)>();
-            }
-            return paths;
-        }
-        private void DFSQuenn(int row, int col, List<(int, int)> currentPath, List<List<(int, int)>> paths)
-        {
-            bool anyCapture = false;
             var directions = new[] { (1, 1), (1, -1), (-1, 1), (-1, -1) };
-
             foreach (var (dr, dc) in directions)
             {
-                int r = row + dr;
-                int c = col + dc;
+                var path = new List<(int, int)> { origin };
+                var r = origin.Row + dr;
+                var c = origin.Col + dc;
                 while (InBoard(r, c) && Cells[r, c] == null)
                 {
-                    r += dr; 
-                    c += dc;
+                    path.Add((r, c));
+                    r += dr; c += dc;
                 }
-                if (InBoard(r, c) && Cells[r, c] != null && Cells[r, c].IsWhite != Cells[currentPath[0].Item1, currentPath[0].Item2].IsWhite)
-                {
-                    int jr = r + dr, jc = c + dc;
-                    while (InBoard(jr, jc) && Cells[jr, jc] == null)
-                    {
-                        anyCapture = true;
-                        var captured = Cells[r, c];
-                        Cells[r, c] = null;
-                        var newPath = new List<(int, int)>(currentPath)
-                        {
-                            (jr, jc)
-                        };
-                        DFSQuenn(jr, jc, newPath, paths);
-                        Cells[r, c] = captured;
-                        jr += dr; 
-                        jc += dc;
-                    }
-                }
+                if (path.Count > 1)
+                    result.Add(path);
             }
+        }
 
-            if (!anyCapture && currentPath.Count > 1)
+        private void FindPaths((int Row, int Col) pos, List<(int, int)> current, List<List<(int, int)>> result, bool isWhite)
+        {
+            bool any = false;
+            var deltas = new[] { (2, 2), (2, -2), (-2, 2), (-2, -2) };
+            foreach (var (dr, dc) in deltas)
             {
-                paths.Add(currentPath);
+                var mid = (Row: pos.Row + dr / 2, Col: pos.Col + dc / 2);
+                var dest = (Row: pos.Row + dr, Col: pos.Col + dc);
+                if (InBoard(dest.Row, dest.Col) && Cells[dest.Row, dest.Col] == null
+                    && InBoard(mid.Row, mid.Col) && Cells[mid.Row, mid.Col] != null
+                    && Cells[mid.Row, mid.Col]!.IsWhite != isWhite)
+                {
+                    any = true;
+                    var captured = Cells[mid.Row, mid.Col];
+                    Cells[mid.Row, mid.Col] = null;
+                    current.Add(dest);
+
+                    FindPaths(dest, current, result, isWhite);
+
+                    current.RemoveAt(current.Count - 1);
+                    Cells[mid.Row, mid.Col] = captured;
+                }
             }
+            if (!any && current.Count > 1)
+                result.Add(new List<(int, int)>(current));
+        }
+
+        private void FindQueenPaths((int Row, int Col) pos,List<(int, int)> current,HashSet<(int, int)> capturedSet, List<List<(int, int)>> result, bool isWhite)
+        {
+            bool any = false;
+            var directions = new[] { (1, 1), (1, -1), (-1, 1), (-1, -1) };
+            foreach (var (dr, dc) in directions)
+            {
+                var r = pos.Row + dr;
+                var c = pos.Col + dc;
+                while (InBoard(r, c) && Cells[r, c] == null)
+                {
+                    r += dr; c += dc;
+                }
+                if (!InBoard(r, c) || Cells[r, c] == null)
+                    continue;
+                var enemy = (Row: r, Col: c);
+                if (Cells[r, c]!.IsWhite == isWhite)
+                    continue;
+                if (capturedSet.Contains(enemy))
+                    continue;
+                var captured = Cells[r, c];
+                Cells[r, c] = null;
+                capturedSet.Add(enemy);
+                var jr = r + dr;
+                var jc = c + dc;
+                while (InBoard(jr, jc) && Cells[jr, jc] == null)
+                {
+                    any = true;
+                    current.Add((jr, jc));
+                    FindQueenPaths((jr, jc), current, capturedSet, result, isWhite);
+                    current.RemoveAt(current.Count - 1);
+                    jr += dr; jc += dc;
+                }
+                capturedSet.Remove(enemy);
+                Cells[r, c] = captured;
+            }
+            if (!any && current.Count > 1)
+                result.Add(new List<(int, int)>(current));
         }
 
         private bool InBoard(int row, int col)
             => row >= 0 && row < 8 && col >= 0 && col < 8;
-
-        
     }
 }
