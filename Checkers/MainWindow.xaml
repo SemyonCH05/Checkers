@@ -57,12 +57,12 @@
                     </Grid.ColumnDefinitions>
 
                     <StackPanel Grid.Column="0" HorizontalAlignment="Left">
-                        <TextBlock Text="Игрок 1" Foreground="White" FontWeight="Bold" />
+                        <TextBlock Text="Белые" Foreground="White" FontWeight="Bold" />
                         <TextBlock Text="{Binding BoardViewModel.Player1Score}" Foreground="White" />
                     </StackPanel>
 
                     <StackPanel Grid.Column="1" HorizontalAlignment="Right">
-                        <TextBlock Text="Игрок 2" Foreground="White" FontWeight="Bold" />
+                        <TextBlock Text="Черные" Foreground="White" FontWeight="Bold" />
                         <TextBlock Text="{Binding BoardViewModel.Player2Score}" Foreground="White" />
                     </StackPanel>
                 </Grid>

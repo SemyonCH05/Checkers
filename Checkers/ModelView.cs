@@ -286,12 +286,25 @@ namespace Checkers
             IsGameScreenVisible = true;
             IsNetworkGameScreenVisible = false;
             BoardViewModel = new BoardViewModel();
+            BoardViewModel = new BoardViewModel();
+            BoardViewModel.OnWin = winner =>
+            {
+                MessageBox.Show($"{winner} победили!");
+                IsGameScreenVisible = false;
+            };
         }
 
         public void StartNetworkGame()
         {
             IsGameScreenVisible = false;
             IsNetworkGameScreenVisible = true;
+            BoardViewModel = new BoardViewModel();
+
+            BoardViewModel.OnWin = winner =>
+            {
+                MessageBox.Show($"{winner} победили!");
+                IsGameScreenVisible = false;
+            };
         }
 
         public async void StartNetworkCreate()
@@ -306,6 +319,13 @@ namespace Checkers
             MessageBox.Show(info);
             IsGameScreenVisible = true;
             IsNetworkGameScreenVisible = false;
+
+            BoardViewModel = new BoardViewModel();
+            BoardViewModel.OnWin = winner =>
+            {
+                MessageBox.Show($"{winner} победили!");
+                IsGameScreenVisible = false;
+            };
         }
 
         public async void StartNetworkConnect()
@@ -329,6 +349,12 @@ namespace Checkers
 
             IsGameScreenVisible = true;
             IsNetworkGameScreenVisible = false;
+            BoardViewModel = new BoardViewModel();
+            BoardViewModel.OnWin = winner =>
+            {
+                MessageBox.Show($"{winner} победили!");
+                IsGameScreenVisible = false;
+            };
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;
@@ -341,6 +367,9 @@ namespace Checkers
     // ViewModel доски
     class BoardViewModel : INotifyPropertyChanged
     {
+
+        public Action<string>? OnWin;
+
         private int _player1Score;
         public int Player1Score
         {
@@ -508,6 +537,10 @@ namespace Checkers
                         Cells[(r) * 4 + (c) / 2].Checker = null;
                         row = i;
                         col = j;
+                        if (IsWhiteTurn)
+                            Player1Score++;
+                        else
+                            Player2Score++;
                     }
                 }
                 else if ((Math.Abs(row - i) == 2 || Math.Abs(col - j) == 2) && cell.Row == mypath[mypath.Count - 1].Item1 && cell.Col == mypath[mypath.Count - 1].Item2)
@@ -519,6 +552,10 @@ namespace Checkers
                     Cells[x * 4 + y / 2].Checker = null;
                     row = i;
                     col = j;
+                    if (IsWhiteTurn)
+                        Player1Score++;
+                    else
+                        Player2Score++;
 
                 }
             }
@@ -565,9 +602,19 @@ namespace Checkers
 
                 }
             }
+
+            if (Player1Score >= 12)
+            {
+                OnWin?.Invoke("Белые");
+            }
+            else if (Player2Score >= 12)
+            {
+                OnWin?.Invoke("Чёрные");
+            }
+
         }
 
-
+        
         // Обработка нажатия на клетку
         private async void Move(CellViewModel cell)
         {
