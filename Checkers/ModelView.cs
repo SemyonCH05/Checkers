@@ -818,11 +818,11 @@ namespace Checkers
                 }
                 if ((cell.Row == 0 && cell.Checker._checkerModel.IsWhite) || (cell.Row == 7 && !cell.Checker._checkerModel.IsWhite))
                     //cell.Checker.IsKing = true;
-                    //ОСТАВИТЬ ДО ЛУЧШИХ ВРЕМЕН
                     cell.Checker._checkerModel.IsKing = true;
                     
 
             }
+
         }
 
         private bool InBoard(int row, int col)
