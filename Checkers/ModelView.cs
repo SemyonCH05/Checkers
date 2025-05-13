@@ -17,6 +17,20 @@ namespace Checkers
 {
     class CheckerViewModel : INotifyPropertyChanged
     {
+        public string ImagePath
+        {
+            get
+            {
+                if (Color && IsKing)
+                    return "pack://application:,,,/Assets/white_king.png";
+                else if (Color && !IsKing)
+                    return "pack://application:,,,/Assets/white_checker.png";
+                else if (!Color && IsKing)
+                    return "pack://application:,,,/Assets/black_king.png";
+                else
+                    return "pack://application:,,,/Assets/black_checker.png";
+            }
+        }
         public Checker _checkerModel;
         public int Row { get; private set; }
         public int Column { get; private set; }
@@ -26,8 +40,12 @@ namespace Checkers
             get => _isKing;
             set
             {
-                _isKing = value;
-                OnPropertyChanged("IsKing");
+                if (_isKing != value)
+                {
+                    _isKing = value;
+                    OnPropertyChanged(nameof(IsKing));
+                    OnPropertyChanged(nameof(ImagePath)); // дамка
+                }
             }
         }
 
@@ -324,6 +342,33 @@ namespace Checkers
     // ViewModel доски
     class BoardViewModel : INotifyPropertyChanged
     {
+        private int _player1Score;
+        public int Player1Score
+        {
+            get => _player1Score;
+            set
+            {
+                if (_player1Score != value)
+                {
+                    _player1Score = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        private int _player2Score;
+        public int Player2Score
+        {
+            get => _player2Score;
+            set
+            {
+                if (_player2Score != value)
+                {
+                    _player2Score = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
         public Server? server;
         public Client? client;
 
@@ -517,7 +562,12 @@ namespace Checkers
                     SelectedCell = null;
                 }
                 if (cell.Row == 0 || cell.Row == 7)
+                {
+                    cell.Checker.IsKing = true;
+
                     cell.Checker._checkerModel.IsKing = true;
+
+                }
             }
         }
 
