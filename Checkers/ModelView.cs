@@ -563,10 +563,10 @@ namespace Checkers
                     SelectedCell.Checker = null;
                     SelectedCell = null;
                 }
-                if (cell.Row == 0 || cell.Row == 7)
+                if ((cell.Row == 0 && cell.Checker._checkerModel.IsWhite) || (cell.Row == 7 && !cell.Checker._checkerModel.IsWhite))
                 {
                     cell.Checker.IsKing = true;
-
+                 
                     cell.Checker._checkerModel.IsKing = true;
 
                 }
@@ -818,18 +818,13 @@ namespace Checkers
                     //cell.Checker = selectedCell.Checker;
                     //cell.Checker.Fill = selectedCell.Checker.Fill;
                 }
-                if (cell.Row == 0 || cell.Row == 7)
+                if ((cell.Row == 0 && cell.Checker._checkerModel.IsWhite) || (cell.Row == 7 && !cell.Checker._checkerModel.IsWhite))
+                    //cell.Checker.IsKing = true;
+                    //ОСТАВИТЬ ДО ЛУЧШИХ ВРЕМЕН
                     cell.Checker._checkerModel.IsKing = true;
+                    
+
             }
-
-
-            //_board.Cells[r2, c2] = _board.Cells[r1, c1];
-            //_board.Cells[r1, c1] = null;
-
-            //Cells[r2 * 4 + c2 / 2].Checker = Cells[r1 * 4 + c1 / 2].Checker;
-            //Cells[r2 * 4 + c2 / 2].Checker.Fill = Cells[r1 * 4 + c1 / 2].Checker.Fill;
-
-            //Cells[r1 * 4 + c1 / 2].Checker = null;
         }
 
         private bool InBoard(int row, int col)
