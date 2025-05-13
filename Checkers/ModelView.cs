@@ -561,10 +561,10 @@ namespace Checkers
                     SelectedCell.Checker = null;
                     SelectedCell = null;
                 }
-                if (cell.Row == 0 || cell.Row == 7)
+                if ((cell.Row == 0 && cell.Checker._checkerModel.IsWhite) || (cell.Row == 7 && !cell.Checker._checkerModel.IsWhite))
                 {
                     cell.Checker.IsKing = true;
-
+                 
                     cell.Checker._checkerModel.IsKing = true;
 
                 }
