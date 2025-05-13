@@ -380,6 +380,9 @@ namespace Checkers
             UpdateBoard(data);
         }
 
+        //Чья очередь ходить
+        bool IsWhiteTurn = true;
+
         // Конструктор
         public BoardViewModel(bool isNetwork = false)
         {
@@ -430,13 +433,12 @@ namespace Checkers
 
         }
 
-        private async void ReplaceChecker(List<(int Row, int Col)> mypath, CellViewModel? cell)
+        private async void ReplaceChecker(CellViewModel cell, List<(int Row, int Col)> mypath)
         {
-            //if (cell == null)
-            //    return;
-            //if (SelectedCell == null)
-            //    return;
-
+            if (cell == null)
+                return;
+            if (SelectedCell == null)
+                return;
             int row = SelectedCell.Row;
             int col = SelectedCell.Col;
             mypath.RemoveAt(0);
@@ -519,10 +521,84 @@ namespace Checkers
             }
         }
 
+
         // Обработка нажатия на клетку
         private async void Move(CellViewModel cell)
         {
+            
+            ResetCellBackgrounds();
+
             List<List<(int, int)>> paths = new List<List<(int, int)>>();
+
+            // Обработка очередности ходов белые-чёрные
+            if (cell.Checker != null && cell.Checker._checkerModel.IsWhite != IsWhiteTurn)
+            {
+                return;
+            }
+
+            var forcedChecker = _board.HasForcedChecker(IsWhiteTurn);
+
+            if (forcedChecker.Count > 0)
+            {
+                if (SelectedCell != null)
+                {
+                    var pathsFromSelected = _board.GetPath(SelectedCell.Row, SelectedCell.Col);
+                    foreach (var path in pathsFromSelected)
+                    {
+                        if (path[^1].Item1 == cell.Row && path[^1].Item2 == cell.Col)
+                        {
+                            ReplaceChecker(cell, path);
+                            ResetCellBackgrounds();
+                            SelectedCell = null;
+
+                            var newForced = _board.HasForcedChecker(IsWhiteTurn);
+                            if (newForced.Count > 0)
+                            {
+                                return;
+                            }
+
+                            IsWhiteTurn = !IsWhiteTurn;
+                            return;
+                        }
+                    }
+                }
+
+                if (cell.Checker == null)
+                    return;
+
+                var isForced = forcedChecker.Any(fc => fc.Item1 == cell.Row && fc.Item2 == cell.Col);
+                if (!isForced)
+                {
+                    ResetCellBackgrounds();
+                    return;
+                }
+
+                var thisPaths = _board.GetPath(cell.Row, cell.Col);
+                if (thisPaths.All(p => p.Count <= 1))
+                {
+                    ResetCellBackgrounds();
+                    return;
+                }
+
+                SelectedCell = cell;
+                ResetCellBackgrounds();
+
+                foreach (var path in thisPaths)
+                {
+                    foreach (var (i, j) in path)
+                    {
+                        if ((cell.Row != i || cell.Col != j) && !cell.Checker._checkerModel.IsKing)
+                            Cells[i * 4 + j / 2].Background = new SolidColorBrush(Color.FromRgb(0, 200, 0));
+                        else if (cell.Checker._checkerModel.IsKing && (cell.Row != i || cell.Col != j))
+                            Cells[i * 4 + j / 2].Background = new SolidColorBrush(Color.FromRgb(128, 128, 128));
+                    }
+
+                    Cells[path[^1].Item1 * 4 + path[^1].Item2 / 2].Background = new SolidColorBrush(Color.FromRgb(128, 128, 128));
+                }
+
+                return;
+            }
+
 
             if (cell.Checker != null)
             {
@@ -537,7 +613,7 @@ namespace Checkers
                     {
                         if (path[path.Count - 1].Row == cell.Row && path[path.Count - 1].Col == cell.Col)
                         {
-                            ReplaceChecker(path, cell);
+                            ReplaceChecker(cell, path);
                             foreach (var p in oldpath)
                             {
                                 foreach (var (i, j) in p)
@@ -569,6 +645,10 @@ namespace Checkers
             }
             if (SelectedCell != null && SelectedCell.Checker != null && cell.Checker != null)
             {
+                if (forcedChecker.Count > 0) {
+                    return;
+                }
+
                 SelectedCell = cell;
                 return;
             }
@@ -580,7 +660,6 @@ namespace Checkers
                     SelectedCell = cell;
                     return;
                 }
-                
                 var oldpaths = _board.GetPath(SelectedCell.Row, SelectedCell.Col);
 
                 foreach (var path in oldpaths)
@@ -606,10 +685,18 @@ namespace Checkers
                 }
                 if (canMove)
                 {
-                    ReplaceChecker(mypath, cell);
+                    ReplaceChecker(cell, mypath);
+                    IsWhiteTurn = !IsWhiteTurn;
                 }
             }
 
+        }
+
+        // Сброс фона
+        private void ResetCellBackgrounds()
+        {
+            foreach (var c in Cells)
+                c.Background = new SolidColorBrush(Color.FromRgb(119, 149, 86));
         }
 
 
