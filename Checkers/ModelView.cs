@@ -11,6 +11,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 
 namespace Checkers
@@ -86,7 +87,8 @@ namespace Checkers
         public int Row { get; }
         public int Col { get; }
 
-        private Brush _background = new SolidColorBrush(Color.FromRgb(119, 149, 86));
+
+        private Brush _background = new SolidColorBrush(Color.FromRgb(69, 54, 47));
 
         public Brush Background
         {
@@ -668,14 +670,14 @@ namespace Checkers
                             {
                                 foreach (var (i, j) in p)
                                 {
-                                    Cells[i * 4 + j / 2].Background = new SolidColorBrush(Color.FromRgb(119, 149, 86));
+                                    Cells[i * 4 + j / 2].Background = new SolidColorBrush(Color.FromRgb(69, 54, 47));
                                 }
                             }
                             return;
                         }
                         foreach (var (i, j) in path)
                         {
-                            Cells[i * 4 + j / 2].Background = new SolidColorBrush(Color.FromRgb(119, 149, 86));
+                            Cells[i * 4 + j / 2].Background = new SolidColorBrush(Color.FromRgb(69, 54, 47));
                         }
                     }
                 }
@@ -716,7 +718,7 @@ namespace Checkers
                 {
                     foreach (var (i, j) in path)
                     {
-                        Cells[i * 4 + j / 2].Background = new SolidColorBrush(Color.FromRgb(119, 149, 86));
+                        Cells[i * 4 + j / 2].Background = new SolidColorBrush(Color.FromRgb(69, 54, 47));
                     }
                 }
                 bool canMove = false;
@@ -746,7 +748,7 @@ namespace Checkers
         private void ResetCellBackgrounds()
         {
             foreach (var c in Cells)
-                c.Background = new SolidColorBrush(Color.FromRgb(119, 149, 86));
+                c.Background = new SolidColorBrush(Color.FromRgb(69, 54, 47));
         }
 
 
