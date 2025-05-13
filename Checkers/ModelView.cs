@@ -17,6 +17,20 @@ namespace Checkers
 {
     class CheckerViewModel : INotifyPropertyChanged
     {
+        public string ImagePath
+        {
+            get
+            {
+                if (Color && IsKing)
+                    return "pack://application:,,,/Assets/white_king.png";
+                else if (Color && !IsKing)
+                    return "pack://application:,,,/Assets/white_checker.png";
+                else if (!Color && IsKing)
+                    return "pack://application:,,,/Assets/black_king.png";
+                else
+                    return "pack://application:,,,/Assets/black_checker.png";
+            }
+        }
         public Checker _checkerModel;
         public int Row { get; private set; }
         public int Column { get; private set; }
@@ -28,6 +42,7 @@ namespace Checkers
             {
                 _isKing = value;
                 OnPropertyChanged("IsKing");
+                OnPropertyChanged(nameof(ImagePath)); // Добавлено
             }
         }
 

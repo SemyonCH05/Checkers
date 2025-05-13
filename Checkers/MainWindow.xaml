@@ -107,9 +107,10 @@
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
                         <Button Command="{Binding CellClick}" CommandParameter="{Binding}" Background="{Binding Background}">
-                            <Ellipse Width="{Binding CellSize, Converter={StaticResource InnerCheckerSizeConverter}}" 
-                                     Height="{Binding CellSize, Converter={StaticResource InnerCheckerSizeConverter}}" 
-                                     Fill="{Binding Checker.Fill}" />
+                            <Image Source="{Binding Checker.ImagePath}"
+                   Width="{Binding CellSize, Converter={StaticResource InnerCheckerSizeConverter}}"
+                   Height="{Binding CellSize, Converter={StaticResource InnerCheckerSizeConverter}}"
+                   Stretch="Uniform"/>
                         </Button>
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
