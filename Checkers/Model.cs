@@ -20,7 +20,7 @@ namespace Checkers
         StreamWriter _writer;
         CancellationTokenSource _cts = new CancellationTokenSource();
 
-        public event Action<string> MessageReceived; // событие сообщение получено
+        public event Action<string> MessageReceived; // событие сообщение получено 
 
         public NetworkPeer(NetworkStream stream)
         {
