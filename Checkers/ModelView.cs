@@ -332,7 +332,7 @@ namespace Checkers
         private double _cellSize; // Размер клетки
 
         
-        // Коллекция клеток, которую будем отображать в UI 
+        // Коллекция клеток, которую будем отображать в UI
         public ObservableCollection<CellViewModel> Cells { get; set; }
 
         // Команда нажатия на клетку
