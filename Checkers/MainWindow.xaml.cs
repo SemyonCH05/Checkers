@@ -53,7 +53,7 @@ namespace Checkers
     public class InnerCheckerSizeConverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
-            => (value is double d) ? d * 0.8 : 0;
+            => (value is double d) ? d * 0.78 : 0;
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
         {

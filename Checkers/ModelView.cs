@@ -40,9 +40,12 @@ namespace Checkers
             get => _isKing;
             set
             {
-                _isKing = value;
-                OnPropertyChanged("IsKing");
-                OnPropertyChanged(nameof(ImagePath)); // Добавлено
+                if (_isKing != value)
+                {
+                    _isKing = value;
+                    OnPropertyChanged(nameof(IsKing));
+                    OnPropertyChanged(nameof(ImagePath)); // дамка
+                }
             }
         }
 
@@ -555,7 +558,12 @@ namespace Checkers
                     SelectedCell = null;
                 }
                 if (cell.Row == 0 || cell.Row == 7)
+                {
+                    cell.Checker.IsKing = true;
+
                     cell.Checker._checkerModel.IsKing = true;
+
+                }
             }
         }
 
