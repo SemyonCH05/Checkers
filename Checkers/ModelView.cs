@@ -296,22 +296,22 @@ namespace Checkers
             ConnectServer IpWindow = new ConnectServer();
 
             if (IpWindow.ShowDialog() == true)
-            {
                 MessageBox.Show($"Ip адрес получен: {IpWindow.IpAdress.ToString()}");
-            }
-
+            else
+                return;
             BoardViewModel = new BoardViewModel(true);
 
             BoardViewModel.client = new Client();
             BoardViewModel.client.OpponentMoved += move =>
             {
                 Application.Current.Dispatcher.Invoke(() => BoardViewModel.OnOpponentMoved(move));
-            }; ;
-            await BoardViewModel.client.Connect(IpWindow.IpAdress);
-
-
-            IsGameScreenVisible = true;
-            IsNetworkGameScreenVisible = false;
+            }; 
+            bool flag = await BoardViewModel.client.Connect(IpWindow.IpAdress);
+            if (flag)
+            {
+                IsGameScreenVisible = true;
+                IsNetworkGameScreenVisible = false;
+            }
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;
@@ -435,10 +435,10 @@ namespace Checkers
 
         private async void ReplaceChecker(CellViewModel cell, List<(int Row, int Col)> mypath)
         {
-            if (cell == null)
-                return;
-            if (SelectedCell == null)
-                return;
+            //if (cell == null)
+            //    return;
+            //if (SelectedCell == null)
+            //    return;
             int row = SelectedCell.Row;
             int col = SelectedCell.Col;
             mypath.RemoveAt(0);
@@ -531,7 +531,7 @@ namespace Checkers
             List<List<(int, int)>> paths = new List<List<(int, int)>>();
 
             // Обработка очередности ходов белые-чёрные
-            if (cell.Checker != null && cell.Checker._checkerModel.IsWhite != IsWhiteTurn)
+            if (cell.Checker != null && cell.Checker._checkerModel.IsWhite != IsWhiteTurn && client == null && server == null)
             {
                 return;
             }

@@ -79,7 +79,7 @@ namespace Checkers
 
             _peer = new NetworkPeer(client.GetStream());
             _peer.MessageReceived += OnMessage;
-            return $"Сервер запущен на {localIp}:{endp.Port}";
+            return $"Сервер запущен";
         }
 
         private void OnMessage(string mes)
@@ -123,11 +123,19 @@ namespace Checkers
 
         public event Action<int[]> OpponentMoved;
 
-        public async Task Connect(string ip)
+        public async Task<bool> Connect(string ip)
         {
-            await _tcpClient.ConnectAsync(ip, 8888);
+            try
+            {
+                await _tcpClient.ConnectAsync(ip, 8888);
+            }
+            catch (Exception ex)
+            {
+                return false;
+            }
             _peer = new NetworkPeer(_tcpClient.GetStream());
             _peer.MessageReceived += OnMessage;
+            return true;
         }
 
         private void OnMessage(string mes)
