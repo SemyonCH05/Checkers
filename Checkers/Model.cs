@@ -37,9 +37,12 @@ namespace Checkers
             {
                 while (!ct.IsCancellationRequested)
                 {
-                    var message = await _reader.ReadLineAsync();  
-                    if (message == null || message == "END") 
+                    var message = await _reader.ReadLineAsync();
+                    if (message == null || message == "END")
+                    {
+                        Stop();
                         break;
+                    }
                     MessageReceived?.Invoke(message);
                 }
             }

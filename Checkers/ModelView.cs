@@ -320,11 +320,12 @@ namespace Checkers
             };
             var info = await BoardViewModel.server.CreateServer();
             
+            
             MessageBox.Show(info);
             IsGameScreenVisible = true;
             IsNetworkGameScreenVisible = false;
 
-            BoardViewModel = new BoardViewModel();
+            
             BoardViewModel.OnWin = winner =>
             {
                 MessageBox.Show($"{winner} победили!");
@@ -346,19 +347,19 @@ namespace Checkers
             BoardViewModel.client.OpponentMoved += move =>
             {
                 Application.Current.Dispatcher.Invoke(() => BoardViewModel.OnOpponentMoved(move));
-            }; 
+            };
             bool flag = await BoardViewModel.client.Connect(IpWindow.IpAdress);
             if (flag)
             {
                 IsGameScreenVisible = true;
                 IsNetworkGameScreenVisible = false;
-                BoardViewModel = new BoardViewModel();
                 BoardViewModel.OnWin = winner =>
                 {
                     MessageBox.Show($"{winner} победили!");
                     IsGameScreenVisible = false;
                 };
             }
+
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;
@@ -545,7 +546,7 @@ namespace Checkers
                     if (cell.Row != r || cell.Col != c)
                     {
                         _board.Cells[r, c] = null;
-                        Cells[(r) * 4 + (c) / 2].Checker = null;
+                        Cells[r * 4 + c / 2].Checker = null;
                         row = i;
                         col = j;
                         if (IsWhiteTurn)
@@ -582,7 +583,9 @@ namespace Checkers
                     {
                         send += $"{Math.Abs(i - 7)} {Math.Abs(j - 7)} ";
                     }
+                    send += $"{Player1Score} {Player2Score} "; // белые черные
                     send += $"{isKing}";
+                    
                 }
                 if (server != null)
                     await server.SendAsync(send);
@@ -618,10 +621,30 @@ namespace Checkers
 
             if (Player1Score >= 12)
             {
+                if (client != null)
+                {
+                    await client.SendAsync("END");
+                    client.Disconnect();
+                }
+                if (server != null)
+                {
+                    await server.SendAsync("END");
+                    await server.Stop();
+                }
                 OnWin?.Invoke("Белые");
             }
             else if (Player2Score >= 12)
             {
+                if (client != null)
+                {
+                    await client.SendAsync("END");
+                    client.Disconnect();
+                }
+                if (server != null)
+                {
+                    await server.SendAsync("END");
+                    await server.Stop();
+                }
                 OnWin?.Invoke("Чёрные");
             }
 
@@ -810,11 +833,15 @@ namespace Checkers
         }
 
 
-        public void UpdateBoard(int[] data)
+        public async void UpdateBoard(int[] data)
         {
             bool IsKing = data[data.Length-1] == 1 ? true : false;
+            int p1 = data[data.Length-3];
+            int p2 = data[data.Length-2];
+            Player1Score = p1;
+            Player2Score = p2;
             List<(int, int)> steps = new List<(int, int)>();
-            for (int i = 0; i < data.Length-1; i+=2)
+            for (int i = 0; i < data.Length-3; i+=2)
             {
                 steps.Add((data[i], data[i+1]));
             }
@@ -876,7 +903,7 @@ namespace Checkers
                     //cell.Checker = selectedCell.Checker;
                     //cell.Checker.Fill = selectedCell.Checker.Fill;
                 }
-                if ((cell.Row == 0 && cell.Checker._checkerModel.IsWhite) || (cell.Row == 7 && !cell.Checker._checkerModel.IsWhite))
+                if ((cell.Row == 0 && !cell.Checker._checkerModel.IsWhite) || (cell.Row == 7 && cell.Checker._checkerModel.IsWhite))
                 {
                     //cell.Checker.IsKing = true;
                     //ОСТАВИТЬ ДО ЛУЧШИХ ВРЕМЕН
@@ -887,6 +914,34 @@ namespace Checkers
                     
 
 
+            }
+            if (Player1Score >= 12)
+            {
+                if (client != null)
+                {
+                    await client.SendAsync("END");
+                    client.Disconnect();
+                }
+                if (server != null)
+                {
+                    await server.SendAsync("END");
+                    await server.Stop();
+                }
+                OnWin?.Invoke("Белые");
+            }
+            else if (Player2Score >= 12)
+            {
+                if (client != null)
+                {
+                    await client.SendAsync("END");
+                    client.Disconnect();
+                }
+                if (server != null)
+                {
+                    await server.SendAsync("END");
+                    await server.Stop();
+                }
+                OnWin?.Invoke("Чёрные");
             }
 
         }
