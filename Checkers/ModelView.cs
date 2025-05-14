@@ -617,12 +617,26 @@ namespace Checkers
                     SelectedCell.Checker = null;
                     SelectedCell = null;
                 }
-                if ((cell.Row == 0 && cell.Checker._checkerModel.IsWhite) || (cell.Row == 7 && !cell.Checker._checkerModel.IsWhite))
+                bool isPieceWhite = cell.Checker._checkerModel.IsWhite;
+                // _board - это поле вашего класса BoardViewModel, которое хранит экземпляр Board
+                // _board.Isclient - получаем настройку из модели доски
+                if (_board.Isclient)
                 {
-                    cell.Checker.IsKing = true;
-                 
-                    cell.Checker._checkerModel.IsKing = true;
-
+                    // Для клиента: "белые" (IsWhite=true) идут к ряду 7, "черные" (IsWhite=false) идут к ряду 0
+                    if ((isPieceWhite && cell.Row == 7) || (!isPieceWhite && cell.Row == 0))
+                    {
+                        cell.Checker.IsKing = true;
+                        cell.Checker._checkerModel.IsKing = true;
+                    }
+                }
+                else // Для сервера (или стандартная ориентация)
+                {
+                    // "Белые" (IsWhite=true) идут к ряду 0, "черные" (IsWhite=false) идут к ряду 7
+                    if ((isPieceWhite && cell.Row == 0) || (!isPieceWhite && cell.Row == 7))
+                    {
+                        cell.Checker.IsKing = true;
+                        cell.Checker._checkerModel.IsKing = true;
+                    }
                 }
             }
 

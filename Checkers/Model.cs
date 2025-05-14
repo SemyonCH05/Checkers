@@ -290,8 +290,18 @@ namespace Checkers
             }
             piece.FromX = row;
             piece.FromY = col;
-            if ((piece.IsWhite && row == 0) || (!piece.IsWhite && row == 7))
-                piece.IsKing = true;
+            if (this.Isclient) // this.Isclient - это поле вашего класса Board
+            {
+                // Для клиента: "белые" (IsWhite=true) идут к ряду 7, "черные" (IsWhite=false) идут к ряду 0
+                if ((piece.IsWhite && row == 7) || (!piece.IsWhite && row == 0))
+                    piece.IsKing = true;
+            }
+            else // Для сервера (или стандартная ориентация)
+            {
+                // "Белые" (IsWhite=true) идут к ряду 0, "черные" (IsWhite=false) идут к ряду 7
+                if ((piece.IsWhite && row == 0) || (!piece.IsWhite && row == 7))
+                    piece.IsKing = true;
+            }
             Cells[row, col] = piece;
         }
 
