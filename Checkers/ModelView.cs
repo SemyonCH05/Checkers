@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
@@ -298,7 +299,7 @@ namespace Checkers
 
         public async void StartNetworkCreate()
         {
-            BoardViewModel = new BoardViewModel();
+            BoardViewModel = new BoardViewModel(isNetwork: true, IsClient: false);
             BoardViewModel.server = new Server();
             BoardViewModel.server.OpponentMoved += move =>
             {
@@ -319,7 +320,7 @@ namespace Checkers
                 MessageBox.Show($"Ip адрес получен: {IpWindow.IpAdress.ToString()}");
             else
                 return;
-            BoardViewModel = new BoardViewModel(true);
+            BoardViewModel = new BoardViewModel(isNetwork: true, IsClient: true);
 
             BoardViewModel.client = new Client();
             BoardViewModel.client.OpponentMoved += move =>
@@ -419,25 +420,31 @@ namespace Checkers
             }
         }
 
+        private readonly bool _isClient;
         // Сетевая или нет игра
         bool IsNetWork;
 
         public void OnOpponentMoved(int[] data)
         {
             UpdateBoard(data);
+            IsWhiteTurn = !IsWhiteTurn;
         }
+
 
         //Чья очередь ходить
         bool IsWhiteTurn = true;
 
         // Конструктор
-        public BoardViewModel(bool isNetwork = false)
+        public BoardViewModel(bool isNetwork = false, bool IsClient = false)
         {
             IsNetWork = isNetwork;
-            if (IsNetWork) 
-                _board = new Board(true);
-            else
-                _board = new Board();
+            _isClient = IsClient;
+            // если сетевая – ходят белые, а затем чёрные (сервер → клиент)
+            IsWhiteTurn = isNetwork ? true : true;
+
+            _board = isNetwork
+                ? new Board(_isClient) // инвертирует доску для клиента
+                : new Board();         // локальная игра
             CellSize = 60;  
 
             // Обработка клика по клетке
@@ -579,7 +586,11 @@ namespace Checkers
         {
             
             ResetCellBackgrounds();
-
+            if (IsNetWork)
+            {
+                if (IsWhiteTurn && _isClient) return;   // белые ходят, но мы клиент (чёрные)
+                if (!IsWhiteTurn && !_isClient) return; // чёрные ходят, но мы сервер (белые)
+            }
             List<List<(int, int)>> paths = new List<List<(int, int)>>();
 
             // Обработка очередности ходов белые-чёрные
@@ -819,12 +830,18 @@ namespace Checkers
                     //cell.Checker.Fill = selectedCell.Checker.Fill;
                 }
                 if ((cell.Row == 0 && cell.Checker._checkerModel.IsWhite) || (cell.Row == 7 && !cell.Checker._checkerModel.IsWhite))
+                {
                     //cell.Checker.IsKing = true;
                     //ОСТАВИТЬ ДО ЛУЧШИХ ВРЕМЕН
+                    cell.Checker.IsKing = true;
+
                     cell.Checker._checkerModel.IsKing = true;
+                }
                     
 
+
             }
+
         }
 
         private bool InBoard(int row, int col)
