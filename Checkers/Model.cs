@@ -13,6 +13,24 @@ using System.IO;
 namespace Checkers
 {
 
+    public class Move
+    {
+        public int FromX { get; }
+        public int FromY { get; }
+        public int ToX { get; }
+        public int ToY { get; }
+        public List<(int Row, int Col)> Path { get; }
+
+        public Move(int fx, int fy, List<(int Row, int Col)> path)
+        {
+            FromX = fx;
+            FromY = fy;
+            Path = path;
+            var last = path.Last();
+            ToX = last.Row;
+            ToY = last.Col;
+        }
+    }
     class NetworkPeer
     {
         NetworkStream _stream;
@@ -169,7 +187,7 @@ namespace Checkers
         }
 
     }
-    class Checker
+    public class Checker
     {
         public bool IsKing { get; set; }
         public bool IsWhite { get; set; }
@@ -195,7 +213,7 @@ namespace Checkers
         }
     }
 
-    class Board
+    public class Board
     {
         public Checker?[,] Cells { get; } = new Checker[8, 8];
 
@@ -228,8 +246,55 @@ namespace Checkers
                     }
                 }
             }
+        
 
         }
+
+        public Board Clone()
+        {
+            var clone = new Board(Isclient);
+            // сначала очистим
+            for (int r = 0; r < 8; r++)
+                for (int c = 0; c < 8; c++)
+                    clone.Cells[r, c] = null;
+            // скопируем
+            for (int r = 0; r < 8; r++)
+            {
+                for (int c = 0; c < 8; c++)
+                {
+                    var orig = this.Cells[r, c];
+                    if (orig != null)
+                        clone.Cells[r, c] = new Checker(orig.IsWhite, orig.IsKing, r, c);
+                }
+            }
+            return clone;
+        }
+
+        public void ApplyMove(Move move)
+        {
+            var path = move.Path;
+            int row = move.FromX, col = move.FromY;
+            var piece = Cells[row, col];
+            Cells[row, col] = null;
+
+            foreach (var step in path.Skip(1))
+            {
+                int nr = step.Row, nc = step.Col;
+                if (Math.Abs(nr - row) > 1 || Math.Abs(nc - col) > 1)
+                {
+                    int midR = (row + nr) / 2;
+                    int midC = (col + nc) / 2;
+                    Cells[midR, midC] = null;
+                }
+                row = nr; col = nc;
+            }
+            piece.FromX = row;
+            piece.FromY = col;
+            if ((piece.IsWhite && row == 0) || (!piece.IsWhite && row == 7))
+                piece.IsKing = true;
+            Cells[row, col] = piece;
+        }
+
 
         public List<List<(int Row, int Col)>> GetPath(int startRow, int startCol)
         {
@@ -401,4 +466,111 @@ namespace Checkers
 
 
     }
+
+    public class MinimaxBot
+    {
+        private readonly bool _aiColor; 
+        private readonly int _maxDepth;
+
+        public MinimaxBot(bool aiColor, int maxDepth = 6)
+        {
+            _aiColor = aiColor;
+            _maxDepth = maxDepth;
+        }
+
+        public Move GetMove(Board board)
+        {
+            var forced = board.HasForcedChecker(_aiColor);
+            var allMoves = new List<Move>();
+
+            for (int r = 0; r < 8; r++)
+                for (int c = 0; c < 8; c++)
+                {
+                    var ch = board.Cells[r, c];
+                    if (ch == null || ch.IsWhite != _aiColor) continue;
+                    var paths = board.GetPath(r, c);
+                    foreach (var p in paths)
+                    {
+                        if (forced.Count == 0 || forced.Any(f => f.row == r && f.col == c))
+                            allMoves.Add(new Move(r, c, p));
+                    }
+                }
+
+            // минимакс
+            int bestVal = int.MinValue;
+            Move bestMove = allMoves[0];
+            foreach (var mv in allMoves)
+            {
+                var cloned = board.Clone();
+                cloned.ApplyMove(mv);
+                int val = Minimax(cloned, _maxDepth - 1, false);
+                if (val > bestVal)
+                {
+                    bestVal = val;
+                    bestMove = mv;
+                }
+            }
+            return bestMove;
+        }
+
+        private int Minimax(Board board, int depth, bool isMax)
+        {
+            if (depth == 0 || board.HasForcedChecker(!_aiColor).Concat(board.HasForcedChecker(_aiColor)).Count() == 0)
+                return Evaluate(board);
+
+            bool turn = isMax ? _aiColor : !_aiColor;
+            var forced = board.HasForcedChecker(turn);
+            var moves = new List<Move>();
+
+            for (int r = 0; r < 8; r++)
+                for (int c = 0; c < 8; c++)
+                {
+                    var ch = board.Cells[r, c];
+                    if (ch == null || ch.IsWhite != turn) continue;
+                    foreach (var p in board.GetPath(r, c))
+                        if (forced.Count == 0 || forced.Any(f => f.row == r && f.col == c))
+                            moves.Add(new Move(r, c, p));
+                }
+
+            if (isMax)
+            {
+                int maxEval = int.MinValue;
+                foreach (var mv in moves)
+                {
+                    var cloned = board.Clone();
+                    cloned.ApplyMove(mv);
+                    maxEval = Math.Max(maxEval, Minimax(cloned, depth - 1, false));
+                }
+                return maxEval;
+            }
+            else
+            {
+                int minEval = int.MaxValue;
+                foreach (var mv in moves)
+                {
+                    var cloned = board.Clone();
+                    cloned.ApplyMove(mv);
+                    minEval = Math.Min(minEval, Minimax(cloned, depth - 1, true));
+                }
+                return minEval;
+            }
+        }
+
+        private int Evaluate(Board board)
+        {
+            int score = 0;
+            for (int r = 0; r < 8; r++)
+                for (int c = 0; c < 8; c++)
+                {
+                    var ch = board.Cells[r, c];
+                    if (ch == null) continue;
+                    int v = ch.IsKing ? 200 : 100;
+                    score += (ch.IsWhite == _aiColor) ? v : -v;
+                }
+            return score;
+        }
+    }
+
+
+
 }

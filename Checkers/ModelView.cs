@@ -288,8 +288,7 @@ namespace Checkers
         {
             IsGameScreenVisible = true;
             IsNetworkGameScreenVisible = false;
-            BoardViewModel = new BoardViewModel();
-            BoardViewModel = new BoardViewModel();
+            BoardViewModel = new BoardViewModel(isNetwork: false, IsClient: false, isSinglePlayer: true);
             BoardViewModel.OnWin = winner =>
             {
                 MessageBox.Show($"{winner} победили!");
@@ -372,6 +371,10 @@ namespace Checkers
     // ViewModel доски
     class BoardViewModel : INotifyPropertyChanged
     {
+
+        private readonly bool _isSinglePlayer;
+        private MinimaxBot _bot;
+
 
         public Action<string>? OnWin;
 
@@ -465,10 +468,14 @@ namespace Checkers
         bool IsWhiteTurn = true;
 
         // Конструктор
-        public BoardViewModel(bool isNetwork = false, bool IsClient = false)
+        public BoardViewModel(bool isNetwork = false, bool IsClient = false, bool isSinglePlayer = false)
         {
             IsNetWork = isNetwork;
             _isClient = IsClient;
+            _isSinglePlayer = isSinglePlayer;
+            if (_isSinglePlayer)
+                _bot = new MinimaxBot(aiColor: false /*false = чёрный*/, maxDepth: 6);
+
             // если сетевая – ходят белые, а затем чёрные (сервер → клиент)
             IsWhiteTurn = isNetwork ? true : true;
 
@@ -517,7 +524,7 @@ namespace Checkers
 
         }
 
-        private async void ReplaceChecker(CellViewModel cell, List<(int Row, int Col)> mypath)
+        private async Task ReplaceChecker(CellViewModel cell, List<(int Row, int Col)> mypath)
         {
             //if (cell == null)
             //    return;
@@ -661,7 +668,7 @@ namespace Checkers
                 if (IsWhiteTurn && _isClient) return;   // белые ходят, но мы клиент (чёрные)
                 if (!IsWhiteTurn && !_isClient) return; // чёрные ходят, но мы сервер (белые)
             }
-            List<List<(int, int)>> paths = new List<List<(int, int)>>();
+            List<List<(int, int)>> allPaths = new List<List<(int, int)>>();
 
             // Обработка очередности ходов белые-чёрные
             if (cell.Checker != null && cell.Checker._checkerModel.IsWhite != IsWhiteTurn && client == null && server == null)
@@ -680,17 +687,32 @@ namespace Checkers
                     {
                         if (path[^1].Item1 == cell.Row && path[^1].Item2 == cell.Col)
                         {
-                            ReplaceChecker(cell, path);
+                            await ReplaceChecker(cell, path);
                             ResetCellBackgrounds();
                             SelectedCell = null;
 
                             var newForced = _board.HasForcedChecker(IsWhiteTurn);
                             if (newForced.Count > 0)
-                            {
                                 return;
-                            }
 
                             IsWhiteTurn = !IsWhiteTurn;
+
+                            if (_isSinglePlayer && !IsWhiteTurn)
+                            {
+                                var botMove = await Task.Run(() => _bot.GetMove(_board));
+
+                                var fromCell = Cells[botMove.FromX * 4 + botMove.FromY / 2];
+                                SelectedCell = fromCell;
+                                var toCell = Cells[botMove.ToX * 4 + botMove.ToY / 2];
+                                var botPaths = _board.GetPath(botMove.FromX, botMove.FromY);
+                                var botPath = botPaths.First(p => p.Last().Row == botMove.ToX
+                                                                && p.Last().Col == botMove.ToY);
+
+                                await ReplaceChecker(toCell, botPath);
+                                SelectedCell = null;
+                                IsWhiteTurn = !IsWhiteTurn;
+                            }
+
                             return;
                         }
                     }
@@ -762,8 +784,8 @@ namespace Checkers
                         }
                     }
                 }
-                paths = _board.GetPath(cell.Row, cell.Col);
-                foreach (var path in paths)
+                allPaths = _board.GetPath(cell.Row, cell.Col);
+                foreach (var path in allPaths)
                 {
                     foreach (var (i, j) in path)
                     {
@@ -785,6 +807,8 @@ namespace Checkers
                 SelectedCell = cell;
                 return;
             }
+
+            
             if (cell.Checker != null && SelectedCell == null || cell.Checker == null && SelectedCell != null)
             {
 
@@ -793,34 +817,42 @@ namespace Checkers
                     SelectedCell = cell;
                     return;
                 }
-                var oldpaths = _board.GetPath(SelectedCell.Row, SelectedCell.Col);
 
-                foreach (var path in oldpaths)
+                var oldPaths = _board.GetPath(SelectedCell.Row, SelectedCell.Col);
+                foreach (var p in oldPaths)
+                    foreach (var (i, j) in p)
+                        Cells[i * 4 + j / 2].Background = new SolidColorBrush(Color.FromRgb(119, 149, 86));
+
+                if (!oldPaths.Any(p => p.Last().Row == cell.Row && p.Last().Col == cell.Col))
                 {
-                    foreach (var (i, j) in path)
-                    {
-                        Cells[i * 4 + j / 2].Background = new SolidColorBrush(Color.FromRgb(69, 54, 47));
-                    }
+                    SelectedCell = null;
+                    return;
                 }
-                bool canMove = false;
-                List<(int, int)> mypath = new List<(int, int)>();
-                foreach (var path in oldpaths)
+
+                var myPath = oldPaths.First(p => p.Last().Row == cell.Row && p.Last().Col == cell.Col);
+                await ReplaceChecker(cell, myPath);
+
+                IsWhiteTurn = !IsWhiteTurn;
+
+                if (_isSinglePlayer && !IsWhiteTurn)
                 {
-                    foreach (var (i, j) in path)
-                    {
-                        if (Cells[i * 4 + j / 2] == cell)
-                        {
-                            canMove = true;
-                            mypath = path;
-                            break;
-                        }
-                    }
-                }
-                if (canMove)
-                {
-                    ReplaceChecker(cell, mypath);
+                    var botMove = await Task.Run(() => _bot.GetMove(_board));
+
+                    var fromCell = Cells[botMove.FromX * 4 + botMove.FromY / 2];
+                    SelectedCell = fromCell;
+
+                    var toCell = Cells[botMove.ToX * 4 + botMove.ToY / 2];
+                    var botPaths = _board.GetPath(botMove.FromX, botMove.FromY);
+                    var botPath = botPaths.First(p => p.Last().Row == botMove.ToX &&
+                                                      p.Last().Col == botMove.ToY);
+
+                    await ReplaceChecker(toCell, botPath);
+                    SelectedCell = null;
+
                     IsWhiteTurn = !IsWhiteTurn;
                 }
+
+                return;
             }
 
         }
