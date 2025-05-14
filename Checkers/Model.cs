@@ -359,18 +359,32 @@ namespace Checkers
         private void AddQueenSimpleMoves((int Row, int Col) origin, List<List<(int, int)>> result)
         {
             var directions = new[] { (1, 1), (1, -1), (-1, 1), (-1, -1) };
-            foreach (var (dr, dc) in directions)
+            foreach (var (dr, dc) in directions) 
             {
-                var path = new List<(int, int)> { origin };
                 var r = origin.Row + dr;
                 var c = origin.Col + dc;
+
                 while (InBoard(r, c) && Cells[r, c] == null)
                 {
-                    path.Add((r, c));
-                    r += dr; c += dc;
+                    var pathToCurrentSquare = new List<(int, int)> { origin };
+
+                    int tempR = origin.Row + dr;
+                    int tempC = origin.Col + dc;
+
+                    while (true)
+                    {
+                        pathToCurrentSquare.Add((tempR, tempC)); 
+                        if (tempR == r && tempC == c) 
+                            break;
+
+                        tempR += dr;
+                        tempC += dc;
+                    }
+                    result.Add(pathToCurrentSquare); 
+
+                    r += dr;
+                    c += dc;
                 }
-                if (path.Count > 1)
-                    result.Add(path);
             }
         }
 
