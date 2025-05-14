@@ -768,7 +768,7 @@ namespace Checkers
                     {
                         if (path[path.Count - 1].Row == cell.Row && path[path.Count - 1].Col == cell.Col)
                         {
-                            ReplaceChecker(cell, path);
+                            await ReplaceChecker(cell, path);
                             foreach (var p in oldpath)
                             {
                                 foreach (var (i, j) in p)
@@ -821,7 +821,7 @@ namespace Checkers
                 var oldPaths = _board.GetPath(SelectedCell.Row, SelectedCell.Col);
                 foreach (var p in oldPaths)
                     foreach (var (i, j) in p)
-                        Cells[i * 4 + j / 2].Background = new SolidColorBrush(Color.FromRgb(119, 149, 86));
+                        Cells[i * 4 + j / 2].Background = new SolidColorBrush(Color.FromRgb(69, 54, 47));
 
                 if (!oldPaths.Any(p => p.Last().Row == cell.Row && p.Last().Col == cell.Col))
                 {
@@ -937,8 +937,7 @@ namespace Checkers
                 }
                 if ((cell.Row == 0 && !cell.Checker._checkerModel.IsWhite) || (cell.Row == 7 && cell.Checker._checkerModel.IsWhite))
                 {
-                    //cell.Checker.IsKing = true;
-                    //ОСТАВИТЬ ДО ЛУЧШИХ ВРЕМЕН
+
                     cell.Checker.IsKing = true;
 
                     cell.Checker._checkerModel.IsKing = true;
