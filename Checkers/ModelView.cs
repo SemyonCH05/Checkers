@@ -699,37 +699,73 @@ namespace Checkers
                     var pathsFromSelected = _board.GetPath(SelectedCell.Row, SelectedCell.Col);
                     foreach (var path in pathsFromSelected)
                     {
-                        if (path[^1].Item1 == cell.Row && path[^1].Item2 == cell.Col)
+                        if (path.Last().Row == cell.Row && path.Last().Col == cell.Col) // cell - это куда прыгнули
                         {
-                            await ReplaceChecker(cell, path);
+                            await ReplaceChecker(cell, path); // Применяем ход, cell это целевая клетка
                             ResetCellBackgrounds();
-                            SelectedCell = null;
 
-                            var newForced = _board.HasForcedChecker(IsWhiteTurn);
-                            if (newForced.Count > 0)
-                                return;
-
-                            IsWhiteTurn = !IsWhiteTurn;
-
-                            if (_isSinglePlayer && !IsWhiteTurn)
+                            // Проверяем, может ли шашка, которая только что походила (теперь находится в 'cell'), бить дальше
+                            bool canContinueCapture = false;
+                            var landedCheckerModel = _board.Cells[cell.Row, cell.Col]; // Модель шашки на клетке приземления
+                            if (landedCheckerModel != null) // Если шашка существует
                             {
-                                var botMove = await Task.Run(() => _bot.GetMove(_board));
-
-                                var fromCell = Cells[botMove.FromX * 4 + botMove.FromY / 2];
-                                SelectedCell = fromCell;
-                                var toCell = Cells[botMove.ToX * 4 + botMove.ToY / 2];
-                                var botPaths = _board.GetPath(botMove.FromX, botMove.FromY);
-                                var botPath = botPaths.First(p => p.Last().Row == botMove.ToX
-                                                                && p.Last().Col == botMove.ToY);
-
-                                await ReplaceChecker(toCell, botPath);
-                                SelectedCell = null;
-                                IsWhiteTurn = !IsWhiteTurn;
+                                var continuablePaths = _board.GetPath(cell.Row, cell.Col); // Получаем все возможные ходы для этой шашки с новой позиции
+                                // Проверяем, есть ли среди них хотя бы один путь, являющийся взятием (т.е. первый шаг - это прыжок)
+                                canContinueCapture = continuablePaths.Any(p_cont =>
+                                    p_cont.Count > 1 && // Путь состоит более чем из одной точки (текущей)
+                                    (Math.Abs(p_cont[1].Row - cell.Row) > 1 || Math.Abs(p_cont[1].Col - cell.Col) > 1) // Первый шаг является прыжком
+                                );
                             }
 
-                            return;
+                            if (canContinueCapture)
+                            {
+                                // Шашка ОБЯЗАНА продолжать бить.
+                                // Делаем ее активной (SelectedCell) и подсвечиваем ее дальнейшие взятия.
+                                CellViewModel justMovedCellVM = Cells.FirstOrDefault(cvm => cvm.Row == cell.Row && cvm.Col == cell.Col);
+                                SelectedCell = justMovedCellVM; // Автоматически выбираем эту шашку для следующего прыжка
+                                if (SelectedCell != null)
+                                {
+                                    SelectedCell.IsSelected = true;
+                                    // Подсвечиваем возможные ходы для SelectedCell (только взятия)
+                                    var nextForcedPaths = _board.GetPath(SelectedCell.Row, SelectedCell.Col);
+                                    foreach (var np in nextForcedPaths)
+                                    {
+                                        // Отображаем только пути, являющиеся взятиями
+                                        if (np.Count > 1 && (Math.Abs(np[1].Row - SelectedCell.Row) > 1 || Math.Abs(np[1].Col - SelectedCell.Col) > 1))
+                                        {
+                                            Cells.FirstOrDefault(cVM => cVM.Row == np.Last().Row && cVM.Col == np.Last().Col)
+                                                .Background = new SolidColorBrush(Color.FromRgb(128, 128, 128)); // Подсветка клетки приземления
+                                        }
+                                    }
+                                }
+                                return; // Ход НЕ ПЕРЕДАЕТСЯ, игрок должен продолжать этой шашкой.
+                            }
+                            else
+                            {
+                                // Эта шашка не может больше бить. Ход должен перейти к оппоненту.
+                                SelectedCell = null; // Сбрасываем выделение
+                                IsWhiteTurn = !IsWhiteTurn;
+
+                                // Логика для хода бота, если это одиночная игра
+                                if (_isSinglePlayer && !IsWhiteTurn)
+                                {
+                                    var botMove = await Task.Run(() => _bot.GetMove(_board));
+                                    var fromCellBot = Cells.First(c => c.Row == botMove.FromX && c.Col == botMove.FromY); SelectedCell = fromCellBot; // Для ReplaceChecker
+                                    var toCellBot = Cells.First(c => c.Row == botMove.ToX && c.Col == botMove.ToY);
+                                    var botPaths = _board.GetPath(botMove.FromX, botMove.FromY);
+                                    var botPath = botPaths.First(p => p.Last().Row == botMove.ToX && p.Last().Col == botMove.ToY);
+
+                                    await ReplaceChecker(toCellBot, botPath);
+                                    SelectedCell = null;
+                                    IsWhiteTurn = !IsWhiteTurn; // Возвращаем ход игроку
+                                }
+                                return; // Ход завершен и передан (или бот сделал ход).
+                            }
                         }
-                    }
+                        // ... (остальная часть цикла foreach (var path in pathsFromSelected))
+                    
+                }
+                   
                 }
 
                 if (cell.Checker == null)
