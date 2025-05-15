@@ -195,8 +195,8 @@ namespace Checkers
         public int FromX { get; set; }
         public int FromY { get; set; }
 
-        public int ToX { get; set; } // нужно для сервера
-        public int ToY { get; set; } // нужно для сервера
+        public int ToX { get; set; } 
+        public int ToY { get; set; } 
 
         // Путь к изображению шашки
         public string ImagePath { get; set; }
@@ -207,8 +207,6 @@ namespace Checkers
             IsKing = isKing;
             FromX = curX;
             FromY = curY;
-
-            // Устанавливаем путь к изображению в зависимости от цвета шашки
             ImagePath = isWhite ? "Assets/white_checker.png" : "Assets/black_checker.png";
         }
     }
@@ -253,11 +251,9 @@ namespace Checkers
         public Board Clone()
         {
             var clone = new Board(Isclient);
-            // сначала очистим
             for (int r = 0; r < 8; r++)
                 for (int c = 0; c < 8; c++)
                     clone.Cells[r, c] = null;
-            // скопируем
             for (int r = 0; r < 8; r++)
             {
                 for (int c = 0; c < 8; c++)
@@ -290,15 +286,13 @@ namespace Checkers
             }
             piece.FromX = row;
             piece.FromY = col;
-            if (this.Isclient) // this.Isclient - это поле вашего класса Board
+            if (this.Isclient) 
             {
-                // Для клиента: "белые" (IsWhite=true) идут к ряду 7, "черные" (IsWhite=false) идут к ряду 0
                 if ((piece.IsWhite && row == 7) || (!piece.IsWhite && row == 0))
                     piece.IsKing = true;
             }
-            else // Для сервера (или стандартная ориентация)
+            else
             {
-                // "Белые" (IsWhite=true) идут к ряду 0, "черные" (IsWhite=false) идут к ряду 7
                 if ((piece.IsWhite && row == 0) || (!piece.IsWhite && row == 7))
                     piece.IsKing = true;
             }
@@ -481,14 +475,10 @@ namespace Checkers
                     }
 
                 }
-                
-
             }
             return forced;
 
         }
-
-
     }
 
     public class MinimaxBot

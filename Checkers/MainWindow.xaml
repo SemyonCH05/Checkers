@@ -32,7 +32,7 @@
             <!-- ЭКРАН СЕТЕВОЙ ИГРЫ -->
             <Grid  x:Name="NetworkGameScreen" Background="#252525" Visibility="{Binding IsNetworkGameVisible}">
                 <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-                    <TextBlock Text="Сетевая игра" FontSize="16" Margin="20" Foreground="#FEFEFE"/>
+                    <TextBlock Text="Сетевая игра" FontSize="16" Margin="20" Foreground="#FEFEFE" />
                     <Button Content="Создать игру" Command="{Binding StartGameCommandCreate}" Background="#FEFEFE" Foreground="#252525" Padding="10" FontSize="14" Width="250" Height="40"/>
                     <Button Content="Подключиться" Command="{Binding StartGameCommandConnect}" Background="#FEFEFE" Foreground="#252525" Padding="10" FontSize="14" Margin="0,20,0,0" Width="250" Height="40"/>
                     <Button Content="Обратно в меню" Command="{Binding BackToMenuCommand}" Background="#FEFEFE" Foreground="#252525" Padding="10" FontSize="14" Margin="0,20,0,0" Width="250" Height="40"/>

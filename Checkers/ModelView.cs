@@ -413,7 +413,6 @@ namespace Checkers
         private double _cellSize; // Размер клетки
 
         
-        // Коллекция клеток, которую будем отображать в UI
         public ObservableCollection<CellViewModel> Cells { get; set; }
 
         // Команда нажатия на клетку
@@ -526,10 +525,6 @@ namespace Checkers
 
         private async Task ReplaceChecker(CellViewModel cell, List<(int Row, int Col)> mypath)
         {
-            //if (cell == null)
-            //    return;
-            //if (SelectedCell == null)
-            //    return;
             int row = SelectedCell.Row;
             int col = SelectedCell.Col;
             mypath.RemoveAt(0);
@@ -618,20 +613,16 @@ namespace Checkers
                     SelectedCell = null;
                 }
                 bool isPieceWhite = cell.Checker._checkerModel.IsWhite;
-                // _board - это поле вашего класса BoardViewModel, которое хранит экземпляр Board
-                // _board.Isclient - получаем настройку из модели доски
                 if (_board.Isclient)
                 {
-                    // Для клиента: "белые" (IsWhite=true) идут к ряду 7, "черные" (IsWhite=false) идут к ряду 0
                     if ((isPieceWhite && cell.Row == 7) || (!isPieceWhite && cell.Row == 0))
                     {
                         cell.Checker.IsKing = true;
                         cell.Checker._checkerModel.IsKing = true;
                     }
                 }
-                else // Для сервера (или стандартная ориентация)
+                else
                 {
-                    // "Белые" (IsWhite=true) идут к ряду 0, "черные" (IsWhite=false) идут к ряду 7
                     if ((isPieceWhite && cell.Row == 0) || (!isPieceWhite && cell.Row == 7))
                     {
                         cell.Checker.IsKing = true;
@@ -699,54 +690,47 @@ namespace Checkers
                     var pathsFromSelected = _board.GetPath(SelectedCell.Row, SelectedCell.Col);
                     foreach (var path in pathsFromSelected)
                     {
-                        if (path.Last().Row == cell.Row && path.Last().Col == cell.Col) // cell - это куда прыгнули
+                        if (path.Last().Row == cell.Row && path.Last().Col == cell.Col) 
                         {
-                            await ReplaceChecker(cell, path); // Применяем ход, cell это целевая клетка
+                            await ReplaceChecker(cell, path); 
                             ResetCellBackgrounds();
 
-                            // Проверяем, может ли шашка, которая только что походила (теперь находится в 'cell'), бить дальше
                             bool canContinueCapture = false;
-                            var landedCheckerModel = _board.Cells[cell.Row, cell.Col]; // Модель шашки на клетке приземления
-                            if (landedCheckerModel != null) // Если шашка существует
+                            var landedCheckerModel = _board.Cells[cell.Row, cell.Col]; 
+                            if (landedCheckerModel != null) 
                             {
-                                var continuablePaths = _board.GetPath(cell.Row, cell.Col); // Получаем все возможные ходы для этой шашки с новой позиции
-                                // Проверяем, есть ли среди них хотя бы один путь, являющийся взятием (т.е. первый шаг - это прыжок)
+                                var continuablePaths = _board.GetPath(cell.Row, cell.Col); 
                                 canContinueCapture = continuablePaths.Any(p_cont =>
-                                    p_cont.Count > 1 && // Путь состоит более чем из одной точки (текущей)
-                                    (Math.Abs(p_cont[1].Row - cell.Row) > 1 || Math.Abs(p_cont[1].Col - cell.Col) > 1) // Первый шаг является прыжком
+                                    p_cont.Count > 1 && 
+                                    (Math.Abs(p_cont[1].Row - cell.Row) > 1 || Math.Abs(p_cont[1].Col - cell.Col) > 1)
                                 );
                             }
 
                             if (canContinueCapture)
                             {
-                                // Шашка ОБЯЗАНА продолжать бить.
-                                // Делаем ее активной (SelectedCell) и подсвечиваем ее дальнейшие взятия.
+
                                 CellViewModel justMovedCellVM = Cells.FirstOrDefault(cvm => cvm.Row == cell.Row && cvm.Col == cell.Col);
-                                SelectedCell = justMovedCellVM; // Автоматически выбираем эту шашку для следующего прыжка
+                                SelectedCell = justMovedCellVM; 
                                 if (SelectedCell != null)
                                 {
                                     SelectedCell.IsSelected = true;
-                                    // Подсвечиваем возможные ходы для SelectedCell (только взятия)
                                     var nextForcedPaths = _board.GetPath(SelectedCell.Row, SelectedCell.Col);
                                     foreach (var np in nextForcedPaths)
                                     {
-                                        // Отображаем только пути, являющиеся взятиями
                                         if (np.Count > 1 && (Math.Abs(np[1].Row - SelectedCell.Row) > 1 || Math.Abs(np[1].Col - SelectedCell.Col) > 1))
                                         {
                                             Cells.FirstOrDefault(cVM => cVM.Row == np.Last().Row && cVM.Col == np.Last().Col)
-                                                .Background = new SolidColorBrush(Color.FromRgb(128, 128, 128)); // Подсветка клетки приземления
+                                                .Background = new SolidColorBrush(Color.FromRgb(128, 128, 128)); 
                                         }
                                     }
                                 }
-                                return; // Ход НЕ ПЕРЕДАЕТСЯ, игрок должен продолжать этой шашкой.
+                                return; 
                             }
                             else
                             {
-                                // Эта шашка не может больше бить. Ход должен перейти к оппоненту.
-                                SelectedCell = null; // Сбрасываем выделение
+                                SelectedCell = null; 
                                 IsWhiteTurn = !IsWhiteTurn;
 
-                                // Логика для хода бота, если это одиночная игра
                                 if (_isSinglePlayer && !IsWhiteTurn)
                                 {
                                     var botMove = await Task.Run(() => _bot.GetMove(_board));
@@ -757,13 +741,11 @@ namespace Checkers
 
                                     await ReplaceChecker(toCellBot, botPath);
                                     SelectedCell = null;
-                                    IsWhiteTurn = !IsWhiteTurn; // Возвращаем ход игроку
+                                    IsWhiteTurn = !IsWhiteTurn;
                                 }
-                                return; // Ход завершен и передан (или бот сделал ход).
+                                return; 
                             }
                         }
-                        // ... (остальная часть цикла foreach (var path in pathsFromSelected))
-                    
                 }
                    
                 }
@@ -907,7 +889,6 @@ namespace Checkers
 
         }
 
-        // Сброс фона
         private void ResetCellBackgrounds()
         {
             foreach (var c in Cells)
@@ -982,17 +963,24 @@ namespace Checkers
                     Cells[cell.Row * 4 + cell.Col / 2].Checker.Fill = Cells[selectedCell.Row * 4 + selectedCell.Col / 2].Checker.Fill;
 
                     Cells[selectedCell.Row * 4 + selectedCell.Col / 2].Checker = null;
-                    //cell.Checker = selectedCell.Checker;
-                    //cell.Checker.Fill = selectedCell.Checker.Fill;
                 }
-                if ((cell.Row == 0 && !cell.Checker._checkerModel.IsWhite) || (cell.Row == 7 && cell.Checker._checkerModel.IsWhite))
+
+                if (_board.Isclient)
                 {
-
-                    cell.Checker.IsKing = true;
-
-                    cell.Checker._checkerModel.IsKing = true;
+                    if ((cell.Checker._checkerModel.IsWhite && cell.Row == 7) || (!cell.Checker._checkerModel.IsWhite && cell.Row == 0))
+                    {
+                        cell.Checker.IsKing = true;
+                        cell.Checker._checkerModel.IsKing = true;
+                    }
                 }
-                    
+                else 
+                {
+                    if ((cell.Checker._checkerModel.IsWhite && cell.Row == 0) || (!cell.Checker._checkerModel.IsWhite && cell.Row == 7))
+                    {
+                        cell.Checker.IsKing = true;
+                        cell.Checker._checkerModel.IsKing = true;
+                    }
+                }
 
 
             }
@@ -1035,7 +1023,6 @@ namespace Checkers
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
         }
-       
     }
 
 
